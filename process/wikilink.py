@@ -48,6 +48,10 @@ def extract_data(fname, server, loadp, savep):
         if page.url[:3] == 'ftp':
             print '\t\t ###### Ftp url found (ignore) ###### \n'
             continue
+        # ignore pages with undesired keywords in urls
+        if contain_keywords(page.url):
+            print '\t\t ###### Undesired keywords in url (ignore) ###### \n'
+            continue
         # ignore pages with 'None' dom
         if page.content.dom == None:
             print '\t\t ###### None dom found (ignore) ###### \n'
@@ -59,6 +63,8 @@ def extract_data(fname, server, loadp, savep):
         if len(entities) < 2:
             print '\t\t ###### Single entity found (discard) ###### \n'
             continue
+
+        print '\t # entities:', len(entities)
 
         # mark dom string
         html = mark_dom(page.content.dom, entities)
@@ -106,6 +112,20 @@ def extract_data(fname, server, loadp, savep):
     f = open(savepath + '{0}.json'.format(fname[:3]), 'w')
     json.dump(data, f, indent = 4)
     f.close()
+
+
+####################################################
+# function to check for undesired keywords in urls #
+####################################################
+def contain_keywords(url):
+    url = url.lower()
+    keywords = ['download', 'file', 'pdf', 'doc', 'ppt']
+
+    for word in keywords:
+        if word in url:
+            return True
+
+    return False
 
 
 #######################################
@@ -237,6 +257,6 @@ if __name__ == '__main__':
                                      jsonrpc.TransportTcpIp(addr = ('127.0.0.1', 8080)))
 
         fnames.sort()
-        for i in range(0, 10):
+        for i in range(0, 20):
             print '****** processing {0} ******\n'.format(fnames[i])
             extract_data(fnames[i], server, loadpath, savepath)
