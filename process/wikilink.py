@@ -89,6 +89,7 @@ def extract_data(fname, server, loadp, savep):
             text = ftfy.fix_text(news.text)
             text = text.encode('ascii', 'ignore')
             text = seperate_punc(word_tokenize(text))
+
             '''
             # Unreliable
             text = ' '.join(word_tokenize(text))
@@ -137,6 +138,8 @@ def extract_entities(mentions):
 
     for m in mentions:
         if m.freebase_id == None:
+            continue
+        if m.wiki_url == None:
             continue
         if m.freebase_id in seen:
             continue
@@ -257,6 +260,6 @@ if __name__ == '__main__':
                                      jsonrpc.TransportTcpIp(addr = ('127.0.0.1', 8080)))
 
         fnames.sort()
-        for i in range(0, 20):
+        for i in range(0, len(fnames)):
             print '****** processing {0} ******\n'.format(fnames[i])
             extract_data(fnames[i], server, loadpath, savepath)
