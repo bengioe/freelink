@@ -13,11 +13,13 @@ from thrift.protocol import TBinaryProtocol
 from newspaper import Article
 from nltk.tokenize import word_tokenize
 from nltk.tokenize import wordpunct_tokenize
+
 import os
 import re
 import sys
 import ftfy
 import json
+import time
 import string
 import jsonrpc
 
@@ -120,7 +122,7 @@ def extract_data(fname, server, loadp, savep):
 ####################################################
 def contain_keywords(url):
     url = url.lower()
-    keywords = ['download', 'file', 'pdf', 'doc', 'ppt']
+    keywords = ['download', 'feed', 'file', 'pdf', 'doc', 'ppt']
 
     for word in keywords:
         if word in url:
@@ -178,6 +180,9 @@ def mark_dom(dom, entities):
 
         tagidx = find_tagidx(prevhtml, match)
 
+        if len(tagidx) == 0:
+            continue
+
         for i in range(0, len(tagidx)):
             # find index to isolate entity mention
             start, end = -1, -1
@@ -205,10 +210,20 @@ def find_tagidx(html, match):
 
     for m in match:
         sidx, eidx = m.start(), m.end()
+        start = time.time()
+
         while html[sidx:sidx + 2] != '<a':
             sidx -= 1
+            if (time.time() - start > 20) or (sidx == 0):
+                index = []
+                return index
+
         while html[eidx - 2:eidx] != 'a>':
             eidx += 1
+            if (time.time() - start > 20) or (eidx == len(html)):
+                index = []
+                return index
+
         index.append({'start': sidx, 'end': eidx})
 
     # return type: tag index pair list
@@ -260,6 +275,6 @@ if __name__ == '__main__':
                                      jsonrpc.TransportTcpIp(addr = ('127.0.0.1', 8080)))
 
         fnames.sort()
-        for i in range(0, len(fnames)):
+        for i in range(int(sys.argv[2]), int(sys.argv[3])):
             print '****** processing {0} ******\n'.format(fnames[i])
             extract_data(fnames[i], server, loadpath, savepath)
