@@ -1,6 +1,5 @@
 # Project FreeLink
 
 ## Processing Stage
-
-* 'wikilink.py':
-- Extraction phase complete
+### 'wikilink.py':
+* Extraction phase complete
