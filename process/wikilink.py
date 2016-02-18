@@ -99,7 +99,7 @@ def extract_data(fname, loadp, savep):
         #######################
         # save processed data #
         #######################
-        print '\t $ Entry # {0} Saved'.format(count)
+        print '\t $ Entry # {0} Saved \n'.format(count)
         data['data'].append({'text': text, 'dict': entities})
 
     #####################
@@ -233,6 +233,72 @@ def seperate_delimiter(tokens):
     return ' '.join(words)
 
 
+##################################################
+# function to further filter extracted json file #
+##################################################
+def filter_data(fname, path):
+    f = open(path + fname)
+    data = json.load(f)
+    filtered = []
+    f.close()
+
+    for d in data['data']:
+        entities = filter_entities(d['text'], d['dict'])
+        if len(entities) > 1:
+            filtered.append({'text': d['text'], 'dict': entities})
+
+    g = open(path + fname, 'w')
+    data['data'] = filtered
+    json.dump(data, g, indent = 4)
+    g.close()
+
+
+####################################################
+# function to filter entities based on parsed text #
+####################################################
+def filter_entities(text, dictionary):
+    result = {}
+    words = None
+    try:
+        words = set(text.split())
+    except:
+        return result
+
+    for key, value in dictionary.iteritems():
+        if key in words:
+            result[key] = value
+
+    # return type: filtered entity dictionary
+    return result
+
+
+###################################################
+# function to compute basic statistics of dataset #
+###################################################
+def compute_stats(fnames, path):
+    count = 0
+    seen = set([])
+
+    for i in range(0, len(fnames)):
+        ##################
+        # load data file #
+        ##################
+        f = open(path + fnames[i], 'r')
+        data = json.load(f)
+        f.close()
+
+        ###########################
+        # compute file statistics #
+        ###########################
+        count += len(data['data'])
+        for d in data['data']:
+            for key, value in d['dict'].iteritems():
+                seen.add(value['freebase_id'])
+
+    # return type: statistics dictionary
+    return {'doc': count, 'ent': len(seen)}
+
+
 #################
 # main function #
 #################
@@ -248,5 +314,26 @@ if __name__ == '__main__':
         fnames.sort()
 
         for i in range(int(sys.argv[2]), int(sys.argv[3])):
-            print '****** processing {0} ******\n'.format(fnames[i])
+            print '****** processing {0} ****** \n'.format(fnames[i])
             extract_data(fnames[i], loadpath, savepath)
+
+    ##################
+    # option: filter #
+    ##################
+    if sys.argv[2] == 'filter':
+        fnames = os.listdir(savepath)
+        fnames.sort()
+
+        for i in range(0, len(fnames)):
+            print '****** filtering {0} ****** \n'.format(fnames[i])
+            filter_data(fnames[i], savepath)
+
+    #################
+    # option: count #
+    #################
+    if sys.argv[3] == 'count':
+        fnames = os.listdir(savepath)
+        fnames.sort()
+
+        stats = compute_stats(fnames, savepath)
+        print '# documents: {0}; # entities: {1}'.format(stats['doc'], stats['ent'])
