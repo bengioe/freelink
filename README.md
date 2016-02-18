@@ -3,4 +3,4 @@
 ## Processing Stage
 
 * 'wikilink.py':
-** Extraction phase complete
+- Extraction phase complete
