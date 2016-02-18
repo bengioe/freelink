@@ -99,7 +99,7 @@ def extract_data(fname, loadp, savep):
         #######################
         # save processed data #
         #######################
-        print '\t $ Entry # {0} Saved'.formate(count)
+        print '\t $ Entry # {0} Saved'.format(count)
         data['data'].append({'text': text, 'dict': entities})
 
     #####################
