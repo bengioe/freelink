@@ -23,7 +23,7 @@ import json
 ###############################################
 # function to extract data from a single file #
 ###############################################
-def extract_data(fname, server, loadp, savep):
+def extract_data(fname, loadp, savep):
     ######################
     # initialize process #
     ######################
