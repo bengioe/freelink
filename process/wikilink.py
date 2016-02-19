@@ -276,8 +276,13 @@ def filter_entities(text, dictionary):
 # function to compute basic statistics of dataset #
 ###################################################
 def compute_stats(fnames, path):
-    count = 0
-    seen = set([])
+    ######################
+    # dataset statistics #
+    ######################
+    docs = 0
+    ents = 0
+    tokens = 0
+    unique = set([])
 
     for i in range(0, len(fnames)):
         ##################
@@ -290,13 +295,16 @@ def compute_stats(fnames, path):
         ###########################
         # compute file statistics #
         ###########################
-        count += len(data['data'])
+        docs += len(data['data'])
+
         for d in data['data']:
+            ents += len(d['dict'])
+            tokens += len(d['text'].split())
             for key, value in d['dict'].iteritems():
-                seen.add(value['freebase_id'])
+                unique.add(value['freebase_id'])
 
     # return type: statistics dictionary
-    return {'doc': count, 'ent': len(seen)}
+    return {'docs': docs, 'ents': ents, 'tokens': tokens, 'unique': len(unique)}
 
 
 #################
@@ -336,4 +344,6 @@ if __name__ == '__main__':
         fnames.sort()
 
         stats = compute_stats(fnames, savepath)
-        print '# documents: {0}; # entities: {1}'.format(stats['doc'], stats['ent'])
+        print '# documents: {0}; # unique entities: {1}'.format(stats['docs'], stats['unique'])
+        print '\t - tokens / doc: {0}'.format(int(stats['tokens'] / float(stats['docs'])))
+        print '\t - entities / doc: {0}'.format(int(stats['ents'] / float(stats['docs'])))

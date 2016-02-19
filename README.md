@@ -4,4 +4,4 @@
 ### /process/wikilink.py:
 * Extraction phase complete
 * Filtering phase complete
-* (basic statistics)
+* Add basic statistics
