@@ -77,8 +77,8 @@ def extract_data(fname, loadp, savep):
         html = mark_dom(page.content.dom, entities)
 
         news = Article(page.url, language = 'en')
-        news.set_html(html)
         try:
+            news.set_html(html)
             news.parse()
         except:
             print '\t\t ###### Parsing failed (discard) ###### \n'
@@ -276,13 +276,17 @@ def filter_entities(text, dictionary):
 # function to compute basic statistics of dataset #
 ###################################################
 def compute_stats(fnames, path):
-    ######################
-    # dataset statistics #
-    ######################
+    ################
+    # global stats #
+    ################
     docs = 0
+    entset = set([])
+    wordset = set([])
+    ###############
+    # local stats #
+    ###############
     ents = 0
-    tokens = 0
-    unique = set([])
+    words = 0
 
     for i in range(0, len(fnames)):
         ##################
@@ -296,15 +300,17 @@ def compute_stats(fnames, path):
         # compute file statistics #
         ###########################
         docs += len(data['data'])
-
         for d in data['data']:
-            ents += len(d['dict'])
-            tokens += len(d['text'].split())
             for key, value in d['dict'].iteritems():
-                unique.add(value['freebase_id'])
+                entset.add(value['freebase_id'])
+            for w in d['text'].split():
+                wordset.add(w)
+            ents += len(d['dict'])
+            words += len(d['text'].split())
 
     # return type: statistics dictionary
-    return {'docs': docs, 'ents': ents, 'tokens': tokens, 'unique': len(unique)}
+    return {'docs': docs, 'ent_voc': len(entset), 'word_voc': len(wordset),
+            'ents': ents, 'words': words}
 
 
 #################
@@ -344,6 +350,6 @@ if __name__ == '__main__':
         fnames.sort()
 
         stats = compute_stats(fnames, savepath)
-        print '# documents: {0}; # unique entities: {1}'.format(stats['docs'], stats['unique'])
-        print '\t - tokens / doc: {0}'.format(int(stats['tokens'] / float(stats['docs'])))
-        print '\t - entities / doc: {0}'.format(int(stats['ents'] / float(stats['docs'])))
+        print '# documents: {0}; # entities: {1}; vocabulary size: {2}'.format(stats['docs'], stats['ent_voc'], stats['word_voc'])
+        print '\t - tokens / doc: {0}'.format(stats['words'] / float(stats['docs']))
+        print '\t - entities / doc: {0}'.format(stats['ents'] / float(stats['docs']))
