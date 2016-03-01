@@ -323,7 +323,7 @@ if __name__ == '__main__':
     ###################
     # option: extract #
     ###################
-    if sys.argv[1] == 'extract':
+    if sys.argv[1] == '-extract':
         fnames = os.listdir(loadpath)
         fnames.sort()
 
@@ -334,7 +334,7 @@ if __name__ == '__main__':
     ##################
     # option: filter #
     ##################
-    if sys.argv[2] == 'filter':
+    if sys.argv[2] == '-filter':
         fnames = os.listdir(savepath)
         fnames.sort()
 
@@ -345,7 +345,7 @@ if __name__ == '__main__':
     #################
     # option: count #
     #################
-    if sys.argv[3] == 'count':
+    if sys.argv[3] == '-count':
         fnames = os.listdir(savepath)
         fnames.sort()
 
