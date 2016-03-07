@@ -239,17 +239,18 @@ def seperate_delimiter(tokens):
 def filter_data(fname, path):
     f = open(path + fname)
     data = json.load(f)
-    filtered = []
     f.close()
+
+    filtered = {'data': []}
 
     for d in data['data']:
         entities = filter_entities(d['text'], d['dict'])
         if len(entities) > 1:
-            filtered.append({'text': d['text'], 'dict': entities})
+            filtered['data'].append({'text': d['text'], 'dict': entities})
 
+    print '\t {0} filtered\n'.format(fname)
     g = open(path + fname, 'w')
-    data['data'] = filtered
-    json.dump(data, g, indent = 4)
+    json.dump(filtered, g, indent = 4)
     g.close()
 
 
@@ -270,6 +271,31 @@ def filter_entities(text, dictionary):
 
     # return type: filtered entity dictionary
     return result
+
+
+#################################
+# function to extract all guids #
+#################################
+def extract_guids(fnames, loadp, savep):
+    entset = set([])
+
+    for i in range(0, len(fnames)):
+        f = open(loadp + fnames[i], 'r')
+        data = json.load(f)
+        f.close()
+
+        for d in data['data']:
+            for key, value in d['dict'].iteritems():
+                entset.add(value['freebase_id'])
+
+    entset = list(entset)
+    entset.sort()
+    guids = {'guid': entset}
+
+    print '\t guids.json saved\n'
+    g = open(savep + 'guids.json')
+    json.dump(guids, g, indent = 4)
+    g.close()
 
 
 ###################################################
@@ -304,7 +330,7 @@ def compute_stats(fnames, path):
             for key, value in d['dict'].iteritems():
                 entset.add(value['freebase_id'])
             for w in d['text'].split():
-                wordset.add(w)
+                wordset.add(w.lower())
             ents += len(d['dict'])
             words += len(d['text'].split())
 
@@ -317,6 +343,7 @@ def compute_stats(fnames, path):
 # main function #
 #################
 if __name__ == '__main__':
+    datapath = '/scratch/data/'
     loadpath = '/scratch/data/wikilink/raw/'
     savepath = '/scratch/data/wikilink/ext/'
 
@@ -327,14 +354,14 @@ if __name__ == '__main__':
         fnames = os.listdir(loadpath)
         fnames.sort()
 
-        for i in range(int(sys.argv[2]), int(sys.argv[3])):
+        for i in range(0, len(fnames)):
             print '****** processing {0} ****** \n'.format(fnames[i])
             extract_data(fnames[i], loadpath, savepath)
 
     ##################
     # option: filter #
     ##################
-    if sys.argv[2] == '-filter':
+    if sys.argv[1] == '-filter':
         fnames = os.listdir(savepath)
         fnames.sort()
 
@@ -342,10 +369,20 @@ if __name__ == '__main__':
             print '****** filtering {0} ****** \n'.format(fnames[i])
             filter_data(fnames[i], savepath)
 
+    ################
+    # option: guid #
+    ################
+    if sys.argv[1] == '-guid':
+        fnames = os.listdir(savepath)
+        fnames.sort()
+
+        print '****** Extracting guids ******'
+        extract_guids(fnames, savepath, datapath)
+
     #################
     # option: count #
     #################
-    if sys.argv[3] == '-count':
+    if sys.argv[1] == '-count':
         fnames = os.listdir(savepath)
         fnames.sort()
 

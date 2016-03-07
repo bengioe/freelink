@@ -5,3 +5,5 @@
 * Extraction phase complete
 * Filtering phase complete
 * Add basic statistics
+
+### /process/freebase.py:
