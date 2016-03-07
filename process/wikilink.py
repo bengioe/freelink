@@ -106,7 +106,7 @@ def extract_data(fname, loadp, savep):
     # save as json file #
     #####################
     print '****** {0}.json saved ******\n'.format(fname[:3])
-    f = open(savepath + '{0}.json'.format(fname[:3]), 'w')
+    f = open(savep + '{0}.json'.format(fname[:3]), 'w')
     json.dump(data, f, indent = 4)
     f.close()
 
@@ -293,7 +293,7 @@ def extract_guids(fnames, loadp, savep):
     guids = {'guid': entset}
 
     print '\t guids.json saved\n'
-    g = open(savep + 'guids.json')
+    g = open(savep + 'guids.json', 'w')
     json.dump(guids, g, indent = 4)
     g.close()
 
@@ -344,49 +344,49 @@ def compute_stats(fnames, path):
 #################
 if __name__ == '__main__':
     datapath = '/scratch/data/'
-    loadpath = '/scratch/data/wikilink/raw/'
-    savepath = '/scratch/data/wikilink/ext/'
+    rawpath = '/scratch/data/wikilink/raw/'
+    extpath = '/scratch/data/wikilink/ext/'
 
     ###################
     # option: extract #
     ###################
     if sys.argv[1] == '-extract':
-        fnames = os.listdir(loadpath)
+        fnames = os.listdir(rawpath)
         fnames.sort()
 
         for i in range(0, len(fnames)):
             print '****** processing {0} ****** \n'.format(fnames[i])
-            extract_data(fnames[i], loadpath, savepath)
+            extract_data(fnames[i], rawpath, extpath)
 
     ##################
     # option: filter #
     ##################
     if sys.argv[1] == '-filter':
-        fnames = os.listdir(savepath)
+        fnames = os.listdir(extpath)
         fnames.sort()
 
         for i in range(0, len(fnames)):
             print '****** filtering {0} ****** \n'.format(fnames[i])
-            filter_data(fnames[i], savepath)
+            filter_data(fnames[i], extpath)
 
     ################
     # option: guid #
     ################
     if sys.argv[1] == '-guid':
-        fnames = os.listdir(savepath)
+        fnames = os.listdir(extpath)
         fnames.sort()
 
         print '****** Extracting guids ******'
-        extract_guids(fnames, savepath, datapath)
+        extract_guids(fnames, extpath, datapath)
 
     #################
     # option: count #
     #################
     if sys.argv[1] == '-count':
-        fnames = os.listdir(savepath)
+        fnames = os.listdir(extpath)
         fnames.sort()
 
-        stats = compute_stats(fnames, savepath)
+        stats = compute_stats(fnames, extpath)
         print '# documents: {0}; # entities: {1}; vocabulary size: {2}'.format(stats['docs'], stats['ent_voc'], stats['word_voc'])
         print '\t - tokens / doc: {0}'.format(stats['words'] / float(stats['docs']))
         print '\t - entities / doc: {0}'.format(stats['ents'] / float(stats['docs']))

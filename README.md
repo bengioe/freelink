@@ -7,3 +7,4 @@
 * Add basic statistics
 
 ### /process/freebase.py:
+* Machine ID extraction complete
