@@ -8,4 +8,5 @@
 
 ### /process/freebase.py:
 * Machine ID extraction complete
+* Add re-fetching failed mid payloads
 * Lexical resource extraction complete
