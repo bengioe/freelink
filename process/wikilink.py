@@ -280,6 +280,7 @@ def extract_guids(fnames, loadp, savep):
     entset = set([])
 
     for i in range(0, len(fnames)):
+        print 'On file {0}\n'.format(fnames[i])
         f = open(loadp + fnames[i], 'r')
         data = json.load(f)
         f.close()
@@ -290,11 +291,13 @@ def extract_guids(fnames, loadp, savep):
 
     entset = list(entset)
     entset.sort()
-    guids = {'guid': entset}
 
-    print '\t guids.json saved\n'
-    g = open(savep + 'guids.json', 'w')
-    json.dump(guids, g, indent = 4)
+    print '# guids: {0}'.format(len(entset))
+    guid = {'guid': entset}
+
+    print '\t guid.json saved'
+    g = open(savep + 'guid.json', 'w')
+    json.dump(guid, g, indent = 4)
     g.close()
 
 
@@ -318,6 +321,7 @@ def compute_stats(fnames, path):
         ##################
         # load data file #
         ##################
+        print 'On file {0}\n'.format(fnames[i])
         f = open(path + fnames[i], 'r')
         data = json.load(f)
         f.close()
@@ -343,7 +347,7 @@ def compute_stats(fnames, path):
 # main function #
 #################
 if __name__ == '__main__':
-    datapath = '/scratch/data/'
+    guidpath = '/scratch/data/freebase/'
     rawpath = '/scratch/data/wikilink/raw/'
     extpath = '/scratch/data/wikilink/ext/'
 
@@ -377,7 +381,7 @@ if __name__ == '__main__':
         fnames.sort()
 
         print '****** Extracting guids ******'
-        extract_guids(fnames, extpath, datapath)
+        extract_guids(fnames, extpath, guidpath)
 
     #################
     # option: count #

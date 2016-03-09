@@ -8,3 +8,4 @@
 
 ### /process/freebase.py:
 * Machine ID extraction complete
+* Lexical resource extraction complete
