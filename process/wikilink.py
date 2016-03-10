@@ -242,7 +242,6 @@ def filter_data(fname, path):
     f.close()
 
     filtered = {'data': []}
-
     for d in data['data']:
         entities = filter_entities(d['text'], d['dict'])
         if len(entities) > 1:
@@ -278,6 +277,7 @@ def filter_entities(text, dictionary):
 #################################
 def extract_guids(fnames, loadp, savep):
     entset = set([])
+    guid2text = {}
 
     for i in range(0, len(fnames)):
         print 'On file {0}\n'.format(fnames[i])
@@ -288,17 +288,21 @@ def extract_guids(fnames, loadp, savep):
         for d in data['data']:
             for key, value in d['dict'].iteritems():
                 entset.add(value['freebase_id'])
+                guid2text[value['freebase_id']] = value['anchor_text']
 
     entset = list(entset)
     entset.sort()
-
-    print '# guids: {0}'.format(len(entset))
     guid = {'guid': entset}
+    print '# guids: {0}'.format(len(entset))
 
     print '\t guid.json saved'
     g = open(savep + 'guid.json', 'w')
     json.dump(guid, g, indent = 4)
     g.close()
+    print '\t guid2text.json saved'
+    h = open(savep + 'guid2text.json', 'w')
+    json.dump(guid2text, h, indent = 4)
+    h.close()
 
 
 ###################################################
