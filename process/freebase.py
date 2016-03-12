@@ -39,7 +39,7 @@ def miss_mid(fnames, guid):
 # find failed mid payload #
 ###########################
 def failed_mid(fnames, path):
-    return failed_json(fnames, path, 'mid')
+    return failed_json(fnames, path)
 
 
 ##########################
@@ -70,7 +70,7 @@ def miss_lex(fnames, guid):
 # find failed lex payload #
 ###########################
 def failed_lex(fnames, path):
-    return failed_json(fnames, path, 'lex')
+    return failed_json(fnames, path)
 
 
 #############################
@@ -92,7 +92,7 @@ def miss_file(fnames, guid):
 ######################################################
 # detect failed json payload needed to be re-fetched #
 ######################################################
-def failed_json(fnames, path, option):
+def failed_json(fnames, path):
     failed = []
 
     for name in fnames:
@@ -104,15 +104,14 @@ def failed_json(fnames, path, option):
             failed.append(guid)
             continue
 
-        field = None
         try:
-            if option == 'mid':
-                field = data['result']['result'][0]['mid']
-            if option == 'lex':
-                field = data['result'][0]['output']['description']['/common/topic/description'][0]
+            status = data['status']
+            if status == '200 OK':
+                continue
+            else:
+                failed.append(guid)
         except:
             failed.append(guid)
-            continue
 
     return failed
 
@@ -218,6 +217,7 @@ if __name__ == '__main__':
             'output': '(description)',
             'query': None
         }
+
         guid = json.load(open(guidpath + 'guid.json', 'r'))
         guid2mid = json.load(open(guidpath + 'guid2mid.json', 'r'))
 
