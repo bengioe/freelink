@@ -218,12 +218,11 @@ if __name__ == '__main__':
             'output': '(description)',
             'query': None
         }
-
         guid = json.load(open(guidpath + 'guid.json', 'r'))
         guid2mid = json.load(open(guidpath + 'guid2mid.json', 'r'))
 
         count = 0
-        for g in guid['guid'][99800:165000]:
+        for g in guid['guid']:
             count += 1
             print '- retriving lex {0} # {1}'.format(guid2mid[g], count)
             params['query'] = guid2mid[g]
@@ -289,7 +288,23 @@ if __name__ == '__main__':
     #######################
     # option: guid to lex #
     #######################
+    if sys.argv[1] == '-guid2lex':
+        fnames = os.listdir(lexpath)
+        fnames.sort()
 
-    '''
-    ......
-    '''
+        guid2lex = {}
+        count = 0
+        miss = 0
+
+        for name in fnames:
+            data = json.load(open(lexpath + name, 'r'))
+            guid = name[:len(name) - 5]
+            lex = data['result'][0]['output']['description']['/common/topic/description'][0]
+            guid2lex[guid] = lex
+
+            count += 1
+            if len(lex) == 0:
+                miss += 1
+
+        print '# lex json payload: {0}; missing {1}'.format(count, miss)
+        json.dump(guid2lex, open(guidpath + 'guid2lex.json', 'w'), indent = 4)
