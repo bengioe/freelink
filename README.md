@@ -13,3 +13,6 @@
 * Lexical resource extraction complete
 * Add re-fetching failed lex payloads
 * - "guid2lex.json" ready!
+
+### /process/preprocess.py
+* (......)

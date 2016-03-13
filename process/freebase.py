@@ -103,7 +103,6 @@ def failed_json(fnames, path):
         except:
             failed.append(guid)
             continue
-
         try:
             status = data['status']
             if status == '200 OK':
@@ -197,14 +196,13 @@ if __name__ == '__main__':
         for name in fnames:
             data = json.load(open(midpath + name, 'r'))
             guid = name[:len(name) - 5]
-            mid = data['result']['result'][0]['mid']
-            guid2mid[guid] = mid
-
+            guid2mid[guid] = data['result']['result'][0]['mid']
             count += 1
-            if len(mid) == 0:
+            if len(guid2mid[guid]) == 0:
                 miss += 1
 
         print '# mid json payload: {0}; missing {1}'.format(count, miss)
+        print '\t guid2mid.json saved'
         json.dump(guid2mid, open(guidpath + 'guid2mid.json', 'w'), indent = 4)
 
     #############################
@@ -240,7 +238,6 @@ if __name__ == '__main__':
             'output': '(description)',
             'query': None
         }
-
         ################################
         # fetching missing lex payload #
         ################################
@@ -299,12 +296,11 @@ if __name__ == '__main__':
         for name in fnames:
             data = json.load(open(lexpath + name, 'r'))
             guid = name[:len(name) - 5]
-            lex = data['result'][0]['output']['description']['/common/topic/description'][0]
-            guid2lex[guid] = lex
-
+            guid2lex[guid] = data['result'][0]['output']['description']['/common/topic/description'][0]
             count += 1
-            if len(lex) == 0:
+            if len(guid2lex[guid]) == 0:
                 miss += 1
 
         print '# lex json payload: {0}; missing {1}'.format(count, miss)
+        print '\t guid2lex.json saved'
         json.dump(guid2lex, open(guidpath + 'guid2lex.json', 'w'), indent = 4)
