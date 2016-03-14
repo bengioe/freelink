@@ -9,7 +9,7 @@ import os
 import sys
 import json
 import urllib
-import wikilink
+from wikilink import seperate_delimiter
 from nltk.tokenize import word_tokenize
 
 
