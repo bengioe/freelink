@@ -14,5 +14,5 @@
 * Add re-fetching failed lex payloads
 * - "guid2lex.json" ready!
 
-### /process/preprocess.py
+### /process/process.py
 * (......)

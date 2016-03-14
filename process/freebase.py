@@ -9,6 +9,8 @@ import os
 import sys
 import json
 import urllib
+import wikilink
+from nltk.tokenize import word_tokenize
 
 
 ##########################
@@ -296,7 +298,7 @@ if __name__ == '__main__':
         for name in fnames:
             data = json.load(open(lexpath + name, 'r'))
             guid = name[:len(name) - 5]
-            guid2lex[guid] = data['result'][0]['output']['description']['/common/topic/description'][0]
+            guid2lex[guid] = seperate_delimiter(word_tokenize(data['result'][0]['output']['description']['/common/topic/description'][0]))
             count += 1
             if len(guid2lex[guid]) == 0:
                 miss += 1
