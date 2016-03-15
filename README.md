@@ -15,4 +15,4 @@
 * - "guid2lex.json" ready!
 
 ### /process/process.py
-* (......)
+* Vocabulary complete
