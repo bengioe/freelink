@@ -7,6 +7,13 @@ created on Mar 12, 2016
 import os
 import sys
 import json
+import numpy
+import cPickle
+from nltk.tokenize import word_tokenize
+from nltk.tokenize import sent_tokenize
+
+def load_embedding(version):
+    return cPickle.load(open('/scratch/data/embedding/' + 'glove.{0}.300d.pkl'.format(version), 'r'))
 
 if __name__ == '__main__':
     #####################################################################
@@ -41,3 +48,43 @@ if __name__ == '__main__':
             vocabulary[w_sorted[i][0]] = i
         json.dump(vocabulary, open(savep + 'vocabulary.json', 'w'), indent = 4)
         print '\t vocabulary saved!'
+
+    ################################
+    # produce entity proxy vectors #
+    ################################
+    if sys.argv[1] == '-proxy':
+        path = '/scratch/data/freebase/'
+        embedding = load_embedding('840B')
+
+        # generate embedding based on entity names #
+        guid2name = json.load(open(path + 'guid2name.json', 'r'))
+        name_vects = {}
+
+        for guid, name in guid2name.iteritems():
+            vects = []
+            for word in word_tokenize(name):
+                if word in embedding['glove']:
+                    vects.append(embedding['glove'][word])
+            if len(vects) > 0:
+                name_vects[guid] = numpy.mean(vects, axis = 0)
+            else:
+                name_vects[guid] = embedding['average']
+
+        print 'Dumping name embeddings ...'
+        cPickle.dump(name_vects, open(path + 'name_vectors.pkl', 'w'), -1)
+        print '\t Saved'
+
+        # generate embedding based on lexical resources #
+        guid2lex = json.load(open(path + 'guid2lex.json', 'r'))
+        lex_vects = {}
+
+        for guid, lex in guid2lex.iteritems():
+            vects = []
+            for word in sent_tokenize(lex)[0].split():
+                if word in embedding['glove']:
+                    vects.append(embedding['glove'][word])
+            lex_vects[guid] = numpy.mean(vects, axis = 0)
+
+        print 'Dumping lexical embeddings ...'
+        cPickle.dump(lex_vects, open(path + 'lex_vectors.pkl', 'w'), -1)
+        print '\t Saved'

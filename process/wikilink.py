@@ -299,8 +299,8 @@ def extract_guids(fnames, loadp, savep):
     g = open(savep + 'guid.json', 'w')
     json.dump(guid, g, indent = 4)
     g.close()
-    print '\t guid2text.json saved'
-    h = open(savep + 'guid2text.json', 'w')
+    print '\t guid2name.json saved'
+    h = open(savep + 'guid2name.json', 'w')
     json.dump(guid2text, h, indent = 4)
     h.close()
 

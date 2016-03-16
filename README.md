@@ -16,3 +16,4 @@
 
 ### /process/process.py
 * Vocabulary complete
+* Name & lexical embeddings extracted
