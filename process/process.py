@@ -8,14 +8,41 @@ import os
 import sys
 import json
 import numpy
+import string
 import cPickle
 from nltk.tokenize import word_tokenize
 from nltk.tokenize import sent_tokenize
 from nltk.corpus import stopwords
-from string import punctuation
 
 def load_embedding(version):
     return cPickle.load(open('/scratch/data/embedding/' + 'glove.{0}.300d.pkl'.format(version), 'r'))
+
+def name_embedding(name, embedding):
+    vects = []
+    for word in word_tokenize(name):
+        if word in embedding['glove']:
+            vects.append(embedding['glove'][word])
+    if len(vects) > 0:
+        return numpy.mean(vects, axis = 0, dtype = 'float32')
+    return embedding['mean']
+
+def lex_embedding(sent, embedding):
+    vects = []
+    for word in sent.split():
+        if word in embedding['glove']:
+            vects.append(embedding['glove'][word])
+    if len(vects) > 0:
+        return numpy.mean(vects, axis = 0, dtype = 'float32')
+    return embedding['mean']
+
+def flex_embedding(sent, embedding, remove):
+    vects = []
+    for word in sent.split():
+        if (word in embedding['glove']) and (word not in remove):
+            vects.append(embedding['glove'][word])
+    if len(vects) > 0:
+        return numpy.mean(vects, axis = 0, dtype = 'float32')
+    return embedding['mean']
 
 if __name__ == '__main__':
     #####################################################################
@@ -33,6 +60,7 @@ if __name__ == '__main__':
         for name in fnames:
             print '- processing file {0}'.format(name)
             data = json.load(open(loadp + name, 'r'))
+
             for sample in data['data']:
                 text = sample['text'].lower()
                 for word in text.split():
@@ -49,6 +77,7 @@ if __name__ == '__main__':
         vocabulary = {}
         for i in range(0, size):
             vocabulary[w_sorted[i][0]] = i
+
         json.dump(vocabulary, open(savep + 'vocabulary.json', 'w'), indent = 4)
         print '\t vocabulary saved!'
 
@@ -56,47 +85,36 @@ if __name__ == '__main__':
     # produce entity proxy vectors #
     ################################
     if sys.argv[1] == '-embedding':
-        path = '/scratch/data/freebase/'
+        loadp = '/scratch/data/freebase/'
+        savep = '/scratch/data/freelink/'
         embedding = load_embedding('840B')
 
         # generate embedding based on entity names #
-        guid2name = json.load(open(path + 'guid2name.json', 'r'))
+        guid2name = json.load(open(loadp + 'guid2name.json', 'r'))
         name_vects = {}
 
         for guid, name in guid2name.iteritems():
-            vects = []
-            for word in word_tokenize(name):
-                if word in embedding['glove']:
-                    vects.append(embedding['glove'][word])
-            if len(vects) > 0:
-                name_vects[guid] = numpy.mean(vects, axis = 0, dtype = 'float32')
-            else:
-                name_vects[guid] = embedding['mean']
+            name_vects[guid] = name_embedding(name, embedding)
 
         print 'Dumping name embeddings ...'
-        cPickle.dump(name_vects, open(path + 'name_vects.pkl', 'w'), -1)
+        cPickle.dump(name_vects, open(savep + 'name_vects.pkl', 'w'), -1)
         print '\t Saved'
 
         # generate embedding based on lexical resources #
-        guid2lex = json.load(open(path + 'guid2lex.json', 'r'))
-        remove = set(stopwords.words('english')) | set(punctuation)
+        guid2lex = json.load(open(loadp + 'guid2lex.json', 'r'))
+        remove = set(stopwords.words('english')) | set(string.punctuation)
         lex_vects = {}
         flex_vects = {}
 
         for guid, lex in guid2lex.iteritems():
-            vects_1 = []
-            vects_2 = []
-            for word in sent_tokenize(lex)[0].split():
-                if word in embedding['glove']:
-                    vects_1.append(embedding['glove'][word])
-                if (word in embedding['glove']) and (word not in remove):
-                    vects_2.append(embedding['glove'][word])
-            lex_vects[guid] = numpy.mean(vects_1, axis = 0, dtype = 'float32')
-            flex_vects[guid] = numpy.mean(vects_2, axis = 0, dtype = 'float32')
+            sent = sent_tokenize(lex)[0]
+            lex_vects[guid] = lex_embedding(sent, embedding)
+            flex_vects[guid] = flex_embedding(sent, embedding, remove)
 
         print 'Dumping lexical embeddings ...'
-        cPickle.dump(lex_vects, open(path + 'lex_vects.pkl', 'w'), -1)
+        cPickle.dump(lex_vects, open(savep + 'lex_vects.pkl', 'w'), -1)
         print '\t Saved'
+
         print 'Dumping filtered lexical embeddings ...'
-        cPickle.dump(flex_vects, open(path + 'flex_vects.pkl', 'w'), -1)
+        cPickle.dump(flex_vects, open(savep + 'flex_vects.pkl', 'w'), -1)
         print '\t Saved'
