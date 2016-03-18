@@ -11,6 +11,8 @@ import numpy
 import cPickle
 from nltk.tokenize import word_tokenize
 from nltk.tokenize import sent_tokenize
+from nltk.corpus import stopwords
+from string import punctuation
 
 def load_embedding(version):
     return cPickle.load(open('/scratch/data/embedding/' + 'glove.{0}.300d.pkl'.format(version), 'r'))
@@ -27,6 +29,7 @@ if __name__ == '__main__':
         w_counts = {}
         fnames = os.listdir(loadp)
         fnames.sort()
+
         for name in fnames:
             print '- processing file {0}'.format(name)
             data = json.load(open(loadp + name, 'r'))
@@ -52,7 +55,7 @@ if __name__ == '__main__':
     ################################
     # produce entity proxy vectors #
     ################################
-    if sys.argv[1] == '-proxy':
+    if sys.argv[1] == '-embedding':
         path = '/scratch/data/freebase/'
         embedding = load_embedding('840B')
 
@@ -66,25 +69,34 @@ if __name__ == '__main__':
                 if word in embedding['glove']:
                     vects.append(embedding['glove'][word])
             if len(vects) > 0:
-                name_vects[guid] = numpy.mean(vects, axis = 0)
+                name_vects[guid] = numpy.mean(vects, axis = 0, dtype = 'float32')
             else:
-                name_vects[guid] = embedding['average']
+                name_vects[guid] = embedding['mean']
 
         print 'Dumping name embeddings ...'
-        cPickle.dump(name_vects, open(path + 'name_vectors.pkl', 'w'), -1)
+        cPickle.dump(name_vects, open(path + 'name_vects.pkl', 'w'), -1)
         print '\t Saved'
 
         # generate embedding based on lexical resources #
         guid2lex = json.load(open(path + 'guid2lex.json', 'r'))
+        remove = set(stopwords.words('english')) | set(punctuation)
         lex_vects = {}
+        flex_vects = {}
 
         for guid, lex in guid2lex.iteritems():
-            vects = []
+            vects_1 = []
+            vects_2 = []
             for word in sent_tokenize(lex)[0].split():
                 if word in embedding['glove']:
-                    vects.append(embedding['glove'][word])
-            lex_vects[guid] = numpy.mean(vects, axis = 0)
+                    vects_1.append(embedding['glove'][word])
+                if (word in embedding['glove']) and (word not in remove):
+                    vects_2.append(embedding['glove'][word])
+            lex_vects[guid] = numpy.mean(vects_1, axis = 0, dtype = 'float32')
+            flex_vects[guid] = numpy.mean(vects_2, axis = 0, dtype = 'float32')
 
         print 'Dumping lexical embeddings ...'
-        cPickle.dump(lex_vects, open(path + 'lex_vectors.pkl', 'w'), -1)
+        cPickle.dump(lex_vects, open(path + 'lex_vects.pkl', 'w'), -1)
+        print '\t Saved'
+        print 'Dumping filtered lexical embeddings ...'
+        cPickle.dump(flex_vects, open(path + 'flex_vects.pkl', 'w'), -1)
         print '\t Saved'

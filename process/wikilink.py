@@ -295,10 +295,10 @@ def extract_guids(fnames, loadp, savep):
     guid = {'guid': entset}
     print '# guids: {0}'.format(len(entset))
 
-    print '\t guid.json saved'
-    g = open(savep + 'guid.json', 'w')
-    json.dump(guid, g, indent = 4)
-    g.close()
+    # print '\t guid.json saved'
+    # g = open(savep + 'guid.json', 'w')
+    # json.dump(guid, g, indent = 4)
+    # g.close()
     print '\t guid2name.json saved'
     h = open(savep + 'guid2name.json', 'w')
     json.dump(guid2text, h, indent = 4)
