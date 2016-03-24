@@ -19,5 +19,5 @@
 * Name & lexical embeddings extracted
 * Complete train / valid / test set split
 
-## Model:
-### /model/......
+## Experiment Stage
+### /model/model.py
