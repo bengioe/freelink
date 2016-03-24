@@ -9,6 +9,7 @@ import sys
 import json
 import numpy
 import string
+import random
 import cPickle
 from nltk.tokenize import word_tokenize
 from nltk.tokenize import sent_tokenize
@@ -50,7 +51,7 @@ if __name__ == '__main__':
     #####################################################################
     if sys.argv[1] == '-vocabulary':
         loadp = '/scratch/data/wikilink/ext/'
-        savep = '/scratch/data/freebase/'
+        savep = '/scratch/data/freelink/'
 
         # compute the word frequencies of the data set #
         w_counts = {}
@@ -118,3 +119,48 @@ if __name__ == '__main__':
         print 'Dumping filtered lexical embeddings ...'
         cPickle.dump(flex_vects, open(savep + 'flex_vects.pkl', 'w'), -1)
         print '\t Saved'
+
+    #####################################
+    # produce train / valid / test data #
+    #####################################
+    if sys.argv[1] == '-data':
+        random.seed(1234)
+        path = '/scratch/data/freelink/'
+        word2idx = json.load(open(path + 'vocabulary.json', 'r'))
+        vects = cPickle.load(open(path + '{0}_vects.pkl'.format(sys.argv[2]), 'r'))
+        size = len(word2idx)
+
+        for f in ['train', 'valid', 'test']:
+            loadp = path + '{0}/'.format(f)
+            fnames = os.listdir(loadp)
+            fnames.sort()
+
+            x, x_p = [], []
+            for name in fnames:
+                if name[-5:] != '.json':
+                    continue
+                data = json.load(open(loadp + name, 'r'))
+                for doc in data['data']:
+                    text, lex = [], []
+                    for word in doc['text'].lower().split():
+                        if word in doc['dict']:
+                            text.append(size + 1)
+                            pos = vects[doc['dict'][word]['freebase_id']]
+                            entset = doc['dict'].keys()
+                            entset.remove(word)
+                            random.shuffle(entset)
+                            sample = entset[random.randint(0, len(entset) - 1)]
+                            neg = vects[doc['dict'][sample]['freebase_id']]
+                            lex.append([pos, neg])
+                        elif word not in word2idx:
+                            text.append(size)
+                        else:
+                            text.append(word2idx[word])
+                    x.append(text)
+                    x_p.append(lex)
+
+            savep = loadp + '{0}/'.format(sys.argv[2])
+            if not os.path.exists(savep):
+                os.makedirs(savep)
+            print 'Saving {0}.pkl ......'.format(f)
+            cPickle.dump({'x': x, 'x_p': x_p}, open(savep + '{0}.pkl'.format(f), 'w'), -1)

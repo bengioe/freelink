@@ -322,10 +322,12 @@ def compute_stats(fnames, path):
     words = 0
 
     for i in range(0, len(fnames)):
+        if fnames[i][-5:] != '.json':
+            continue
         ##################
         # load data file #
         ##################
-        print 'On file {0}\n'.format(fnames[i])
+        # print 'On file {0}\n'.format(fnames[i])
         f = open(path + fnames[i], 'r')
         data = json.load(f)
         f.close()
@@ -391,7 +393,7 @@ if __name__ == '__main__':
     # option: count #
     #################
     if sys.argv[1] == '-count':
-        fnames = os.listdir(extpath)
+        fnames = os.listdir('/scratch/data/freelink/{0}/'.format(sys.argv[2]))
         fnames.sort()
 
         stats = compute_stats(fnames, extpath)

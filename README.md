@@ -17,3 +17,7 @@
 ### /process/process.py
 * Vocabulary complete
 * Name & lexical embeddings extracted
+* Complete train / valid / test set split
+
+## Model:
+### /model/......
