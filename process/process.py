@@ -139,8 +139,12 @@ if __name__ == '__main__':
             for name in fnames:
                 if name[-5:] != '.json':
                     continue
+
                 data = json.load(open(loadp + name, 'r'))
                 for doc in data['data']:
+                    if len(doc['text'].split()) > 3000:
+                        continue
+
                     text, lex = [], []
                     for word in doc['text'].lower().split():
                         if word in doc['dict']:
@@ -156,11 +160,11 @@ if __name__ == '__main__':
                             text.append(size)
                         else:
                             text.append(word2idx[word])
-                    x.append(text)
+                    x.append(numpy.int32(text))
                     x_p.append(lex)
 
             savep = loadp + '{0}/'.format(sys.argv[2])
             if not os.path.exists(savep):
                 os.makedirs(savep)
             print 'Saving {0}.pkl ......'.format(f)
-            cPickle.dump({'x': x, 'x_p': x_p}, open(savep + '{0}.pkl'.format(f), 'w'), -1)
+            cPickle.dump({'x': x, 'e': x_p}, open(savep + '{0}.pkl'.format(f), 'w'), -1)
