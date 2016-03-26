@@ -21,7 +21,7 @@
 
 ## Experiment Stage
 ### /model/model.py
-* ......
+* Build model classes
 
 ### /model/experiment.py
-* ......
+* Finish launch script
