@@ -42,14 +42,14 @@ def shuffle_data(docs, lexs):
     return [docs[i] for i in indexes], [lexs[j] for j in indexes]
 
 def launch(datapath = '/scratch/data/freelink/', lex_version = 'name', vocab_size = 60002, random_emb = True,
-            batch_size = 16, l_rate = 0.05, num_epochs = 100):
+            batch_size = 16, lr_rate = 0.05, num_epochs = 100):
     float32 = lambda x : numpy.float32(x)
 
     train = cPickle.load(open(datapath + 'train/{0}/train.pkl'.format(lex_version), 'r'))
     train_docs = train['x']
     train_lexs = train['e']
     ndocs = len(train_docs)
-    lr = float32(l_rate)
+    lr = float32(lr_rate)
 
     valid = cPickle.load(open(datapath + 'valid/{0}/valid.pkl'.format(lex_version), 'r'))
     valid_docs = valid['x']
