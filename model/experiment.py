@@ -82,17 +82,17 @@ def launch_exp(settings):
     if not os.path.exists(exp_dir):
         os.makedirs(exp_dir)
     json.dump(settings, open(exp_dir + 'settings.json', 'w'), indent = 4)
-    print 'Settings:', settings
+    print 'Settings:', settings, '\n'
 
     float32 = lambda x : numpy.float32(x)
 
     train = cPickle.load(open(settings['datapath'] + 'train/{0}/train.pkl'.format(settings['lex_version']), 'r'))
-    train_docs = train['x'][:90]
-    train_lexs = train['e'][:90]
+    train_docs = train['x']
+    train_lexs = train['e']
     num_train = len(train_docs)
     valid = cPickle.load(open(settings['datapath'] + 'valid/{0}/valid.pkl'.format(settings['lex_version']), 'r'))
-    valid_docs = valid['x'][:10]
-    valid_lexs = valid['e'][:10]
+    valid_docs = valid['x']
+    valid_lexs = valid['e']
     num_valid = len(valid_docs)
 
     num_epochs = settings['num_epochs']
