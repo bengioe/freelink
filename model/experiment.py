@@ -82,6 +82,7 @@ def launch_exp(settings):
     if not os.path.exists(exp_dir):
         os.makedirs(exp_dir)
     json.dump(settings, open(exp_dir + 'settings.json', 'w'), indent = 4)
+    print 'Settings:', settings
 
     float32 = lambda x : numpy.float32(x)
 
@@ -89,7 +90,6 @@ def launch_exp(settings):
     train_docs = train['x'][:90]
     train_lexs = train['e'][:90]
     num_train = len(train_docs)
-
     valid = cPickle.load(open(settings['datapath'] + 'valid/{0}/valid.pkl'.format(settings['lex_version']), 'r'))
     valid_docs = valid['x'][:10]
     valid_lexs = valid['e'][:10]
@@ -191,16 +191,16 @@ def launch_exp(settings):
 if __name__ == '__main__':
     settings = {
         'datapath': '/scratch/data/freelink/',      # path to dataset
-        'lex_version': 'flex',                      # lexical embedding version
+        'lex_version': 'name',                      # lexical embedding version
         'valid_freq': 5,                            # frequency to test on validation set
         'vocab_size': 60000 + 2,                    # vocabulary size
         'random_init': False,                       # random initialization of word embeddings
-        'num_epochs': 60,                           # number of training epochs
-        'batch_size': 64,                           # size of mini-batch
+        'num_epochs': 100,                          # number of training epochs
+        'batch_size': 32,                           # size of mini-batch
         'lr_rate': 0.05,                            # learning rate
         'embedding_dim': 300,                       # word embedding dimension
-        'lstm_dim': 200,                            # lstm layer dimension
-        'use_gate': True,                           # use filter gate
+        'lstm_dim': 128,                            # lstm layer dimension
+        'use_gate': False,                          # use filter gate
         'gate_activation': 'sigmoid'                # gate activation function
     }
 
