@@ -89,12 +89,8 @@ class Predictor:
 
         self.in2lstm = HiddenLayer(embedding_dim, lstm_dim, 'tanh')
         self.lstm = LSTMLayer(lstm_dim)
-
         self.lstm2gate = HiddenLayer(lstm_dim, embedding_dim, None)
         self.e2gate = HiddenLayer(embedding_dim, embedding_dim, None)
-
-        self.lstm2pred = HiddenLayer(lstm_dim, 1, None)
-        self.e2pred = HiddenLayer(embedding_dim, 1, None)
 
         prelstm = self.in2lstm.apply(x_embds)
         hs = self.lstm.apply(prelstm)           # : (seq_len, minibatch_size, lstm_dim)
@@ -106,33 +102,27 @@ class Predictor:
                     _step, blankidxs, [],
                     profile = _doProfile)
 
-        self.crsW = theano.shared(numpy.random.uniform(-.1, .1, (embedding_dim, lstm_dim)).astype(config.floatX), 'crsW')
-        eC = T.dot(e, self.crsW)
-        crs = T.sum(eC * indexed_hs.dimshuffle(0, 1, 'x', 2), axis = 3)
+        gated_es = e
 
-        hpred = self.lstm2pred.apply(indexed_hs)        # : (nblanks, minibatch_size, 1)
         if use_gate:
             act = {'sigmoid': T.nnet.sigmoid, 'relu': lambda x : T.maximum(0, x), None: lambda x : x}[gate_activation]
-            classifier_e_input = act(self.lstm2gate.apply(indexed_hs).dimshuffle(0, 1, 'x', 2) + self.e2gate.apply(e))
-            classifier_e_input = classifier_e_input * e
-        else:
-            classifier_e_input = e
-        epred = self.e2pred.apply(classifier_e_input)   # : (nblanks, minibatch_size, 2, 1)
+            gated_es = act(self.lstm2gate.apply(indexed_hs).dimshuffle(0, 1, 'x', 2) + self.e2gate.apply(e))
+            gated_es = gated_es * e
 
-        pred = None                                     # : (nblanks, minibatch_size, 2)
-        if use_gate:
-            pred = T.nnet.sigmoid(hpred.dimshuffle(0, 1, 'x', 2) + epred).flatten(3)
-        else:
-            pred = T.nnet.sigmoid(hpred.dimshuffle(0, 1, 'x', 2) + epred + crs.dimshuffle(0, 1, 2, 'x')).flatten(3)
+        self.W = theano.shared(numpy.random.uniform(-.1, .1, (embedding_dim, lstm_dim)).astype(config.floatX), 'W')
+        self.b = theano.shared(numpy.float32(0.), 'b')
+
+        eC = T.dot(gated_es, self.W)
+        crs = T.sum(eC * indexed_hs.dimshuffle(0, 1, 'x', 2), axis = 3)
+        pred = T.nnet.sigmoid(crs.dimshuffle(0, 1, 2, 'x') + self.b).flatten(3)
 
         error = T.argmax(pred * masks.dimshuffle(0, 1, 'x'), axis = 2).sum()
         cost = T.mean(T.sum(T.nnet.binary_crossentropy(pred, y) * masks.dimshuffle(0, 1, 'x'), axis = [0, 2]) / masks.sum(axis = 0))
 
-        params = self.in2lstm.params + self.lstm.params + self.lstm2pred.params + self.e2pred.params + [embeddings]
+        params = self.in2lstm.params + self.lstm.params + [embeddings, self.W, self.b]
+
         if use_gate:
             params += self.lstm2gate.params + self.e2gate.params
-        else:
-            params += [self.crsW]
 
         self.params = params
         grads = T.grad(cost, params)
