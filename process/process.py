@@ -142,7 +142,7 @@ if __name__ == '__main__':
 
                 data = json.load(open(loadp + name, 'r'))
                 for doc in data['data']:
-                    if len(doc['text'].split()) > int(sys.argv[2]):
+                    if len(doc['text'].split()) > int(sys.argv[3]):
                         continue
 
                     text, lex = [], []
