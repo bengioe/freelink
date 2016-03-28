@@ -106,7 +106,7 @@ class Predictor:
                     _step, blankidxs, [],
                     profile = _doProfile)
 
-        self.crsW = theano.shared(numpy.random.uniform(-.1, .1, (embedding_dim, lstm_dim)), 'crsW')
+        self.crsW = theano.shared(numpy.random.uniform(-.1, .1, (embedding_dim, lstm_dim)).astype(config.floatX), 'crsW')
         eC = T.dot(e, self.crsW)
         crs = T.sum(eC * indexed_hs.dimshuffle(0, 1, 'x', 2), axis = 3)
 
@@ -119,7 +119,7 @@ class Predictor:
             classifier_e_input = e
         epred = self.e2pred.apply(classifier_e_input)   # : (nblanks, minibatch_size, 2, 1)
 
-        pred = None     # : (nblanks, minibatch_size, 2)
+        pred = None                                     # : (nblanks, minibatch_size, 2)
         if use_gate:
             pred = T.nnet.sigmoid(hpred.dimshuffle(0, 1, 'x', 2) + epred).flatten(3)
         else:
