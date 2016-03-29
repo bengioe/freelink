@@ -213,10 +213,10 @@ if __name__ == '__main__':
         'lstm_dim': 128,                            # lstm layer dimension
         'use_gate': False,                          # use filter gate
         'gate_activation': 'sigmoid',               # gate activation function
-        'optimization_method': 'sgd',               # either adam or sgd
-        'adam_beta1':0.9,                           # 1st adam hyperparameter
-        'adam_beta2':0.999,                         # 2nd adam hyperparameter
-        'adam_epsilon':1e-4                         # 3rd adam hyperparameter
+        'optimization_method': 'sgd',               # accepted value: 'sgd', 'adam'
+        'adam_beta1': 0.9,                          # 1st adam hyperparameter
+        'adam_beta2': 0.999,                        # 2nd adam hyperparameter
+        'adam_epsilon': 1e-4                        # 3rd adam hyperparameter
     }
 
     #####################
