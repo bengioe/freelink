@@ -113,7 +113,7 @@ def launch_exp(settings):
     model = Predictor(embeddings,
                       embedding_dim = settings['embedding_dim'], lstm_dim = settings['lstm_dim'],
                       use_gate = settings['use_gate'], gate_activation = settings['gate_activation'],
-                      optimization_method=optimization_method)
+                      optimization_method = optimization_method)
 
     exp_results = {'train_results': {'costs': [], 'errors': []}, 'valid_results': []}
     best_valid_err = 1.
@@ -213,18 +213,11 @@ if __name__ == '__main__':
         'lstm_dim': 128,                            # lstm layer dimension
         'use_gate': False,                          # use filter gate
         'gate_activation': 'sigmoid',               # gate activation function
-        'optimization_method': 'adam',              # either adam or sgd
-        'adam_beta1':0.9,                           # adam hyperparameters
-        'adam_beta2':0.999,
-        'adam_epsilon':1e-4,
+        'optimization_method': 'sgd',               # either adam or sgd
+        'adam_beta1':0.9,                           # 1st adam hyperparameter
+        'adam_beta2':0.999,                         # 2nd adam hyperparameter
+        'adam_epsilon':1e-4                         # 3rd adam hyperparameter
     }
-
-    if False:
-        settings['datapath'] = '../../data/'
-        settings['lr_rate']=0.005
-        settings['batch_size']=4
-        settings['random_init'] = True
-
 
     #####################
     # launch experiment #
