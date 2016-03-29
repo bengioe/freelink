@@ -100,9 +100,20 @@ def launch_exp(settings):
     lr = float32(settings['lr_rate'])
 
     embeddings = load_embeddings(settings['datapath'], settings['vocab_size'], settings['embedding_dim'], settings['random_init'])
+    if settings['optimization_method'] == 'sgd':
+        optimization_method = sgd(lr)
+    elif settings['optimization_method'] == 'adam':
+        optimization_method = Adam(lr,
+                                   settings['adam_beta1'],
+                                   settings['adam_beta2'],
+                                   settings['adam_epsilon'])
+    else:
+        raise ValueError
+
     model = Predictor(embeddings,
-                    embedding_dim = settings['embedding_dim'], lstm_dim = settings['lstm_dim'],
-                    use_gate = settings['use_gate'], gate_activation = settings['gate_activation'])
+                      embedding_dim = settings['embedding_dim'], lstm_dim = settings['lstm_dim'],
+                      use_gate = settings['use_gate'], gate_activation = settings['gate_activation'],
+                      optimization_method=optimization_method)
 
     exp_results = {'train_results': {'costs': [], 'errors': []}, 'valid_results': []}
     best_valid_err = 1.
@@ -131,7 +142,7 @@ def launch_exp(settings):
             y = prep_y_batch(e)
 
             # train on mini-batch #
-            cost, err = model.learn(x, y, e, lr, bid, masks)
+            cost, err = model.learn(x, y, e, bid, masks)
 
             # cost, error #
             epoch_cost += cost * actual_size
@@ -197,12 +208,23 @@ if __name__ == '__main__':
         'random_init': False,                       # random initialization of word embeddings
         'num_epochs': 100,                          # number of training epochs
         'batch_size': 32,                           # size of mini-batch
-        'lr_rate': 0.05,                            # learning rate
+        'lr_rate': 0.005,                           # learning rate
         'embedding_dim': 300,                       # word embedding dimension
         'lstm_dim': 128,                            # lstm layer dimension
         'use_gate': False,                          # use filter gate
-        'gate_activation': 'sigmoid'                # gate activation function
+        'gate_activation': 'sigmoid',               # gate activation function
+        'optimization_method': 'adam',              # either adam or sgd
+        'adam_beta1':0.9,                           # adam hyperparameters
+        'adam_beta2':0.999,
+        'adam_epsilon':1e-4,
     }
+
+    if False:
+        settings['datapath'] = '../../data/'
+        settings['lr_rate']=0.005
+        settings['batch_size']=4
+        settings['random_init'] = True
+
 
     #####################
     # launch experiment #

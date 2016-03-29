@@ -13,9 +13,42 @@ import sys
 import random
 import time
 
+from collections import OrderedDict
+
 config = theano.config
 config.compute_test_value = 'off'
 _doProfile = False
+
+
+
+def sgd(lr):
+    def f(params, grads):
+        updates = [(i, i - lr * gi) for i, gi in zip(params, grads)]
+        return updates
+    return f
+
+class Adam(): # stolen from Jean, who probably stole it from someone else :P
+    def __init__(self, lr=0.0005,
+                 beta1=0.9, beta2=0.999, epsilon=1e-4):
+        self.lr = lr
+        self.b1 = numpy.float32(beta1)
+        self.b2 = numpy.float32(beta2)
+        self.eps = numpy.float32(epsilon)
+    def __call__(self, params, grads):
+        t = theano.shared(numpy.array(2., dtype='float32'))
+        updates = OrderedDict()
+        updates[t] = t+1
+        for param, grad in zip(params, grads):
+            last_1_moment = theano.shared(numpy.float32(param.get_value() * 0))
+            last_2_moment = theano.shared(numpy.float32(param.get_value() * 0))
+            new_last_1_moment = T.cast((1. - self.b1) * grad + self.b1 * last_1_moment,'float32')
+            new_last_2_moment = T.cast((1. - self.b2) * grad**2 + self.b2 * last_2_moment,'float32')
+            updates[last_1_moment] = new_last_1_moment
+            updates[last_2_moment] = new_last_2_moment
+            updates[param] = (param - (self.lr*(new_last_1_moment/(1-self.b1**t)) /
+                                       (T.sqrt(new_last_2_moment/(1-self.b2**t)) + self.eps)))
+        return updates
+
 
 def ortho_matrix(ndim):
     W = numpy.random.randn(ndim, ndim)
@@ -77,8 +110,9 @@ class HiddenLayer:
         return self.activation(T.dot(x, self.W) + self.b)
 
 class Predictor:
-    def __init__(self, embeddings, embedding_dim = 300, lstm_dim = 128, use_gate = False, gate_activation='sigmoid'):
-        lr = T.scalar('lr')                 # : scalar
+    def __init__(self, embeddings, embedding_dim = 300, lstm_dim = 128, use_gate = False, gate_activation='sigmoid',optimization_method='sgd'):
+
+
         x = T.imatrix('input')              # : (seq_len, minibatch_size)
         y = T.tensor3('targets')            # : (nblanks, minibatch_size, 2)
         e = T.tensor4('embds')              # : (nblanks, minibatch_size, 2, embedding_dim)
@@ -126,9 +160,9 @@ class Predictor:
 
         self.params = params
         grads = T.grad(cost, params)
-        updates = [(i, i - lr * gi) for i, gi in zip(params, grads)]
+        updates = optimization_method(params, grads)
 
-        self.learn = theano.function([x, y, e, lr, blankidxs, masks], [cost, error], updates = updates, profile = _doProfile)
+        self.learn = theano.function([x, y, e, blankidxs, masks], [cost, error], updates = updates, profile = _doProfile)
         self.test = theano.function([x, e, blankidxs, masks], [error])
 
     def save_params(self, path):
