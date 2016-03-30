@@ -16,7 +16,7 @@ from nltk.tokenize import sent_tokenize
 from nltk.corpus import stopwords
 
 _filtering = True
-_threshold = 1200
+_threshold = 1000
 random.seed(1234)
 
 def load_embedding(version):

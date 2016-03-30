@@ -20,7 +20,7 @@ import ftfy
 import json
 
 _filtering = True
-_threshold = 1200
+_threshold = 1000
 
 ###############################################
 # function to extract data from a single file #
