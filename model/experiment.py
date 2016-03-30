@@ -86,11 +86,11 @@ def launch_exp(settings):
 
     float32 = lambda x : numpy.float32(x)
 
-    train = cPickle.load(open(settings['datapath'] + 'train/{0}/train.pkl'.format(settings['lex_version']), 'r'))
+    train = cPickle.load(open(settings['datapath'] + 'train/train_{0}.pkl'.format(settings['lex_version']), 'r'))
     train_docs = train['x']
     train_lexs = train['e']
     num_train = len(train_docs)
-    valid = cPickle.load(open(settings['datapath'] + 'valid/{0}/valid.pkl'.format(settings['lex_version']), 'r'))
+    valid = cPickle.load(open(settings['datapath'] + 'valid/valid_{0}.pkl'.format(settings['lex_version']), 'r'))
     valid_docs = valid['x']
     valid_lexs = valid['e']
     num_valid = len(valid_docs)
@@ -208,12 +208,12 @@ if __name__ == '__main__':
         'random_init': False,                       # random initialization of word embeddings
         'num_epochs': 100,                          # number of training epochs
         'batch_size': 32,                           # size of mini-batch
-        'lr_rate': 0.005,                           # learning rate
+        'lr_rate': 0.0025,                          # learning rate
         'embedding_dim': 300,                       # word embedding dimension
         'lstm_dim': 128,                            # lstm layer dimension
         'use_gate': False,                          # use filter gate
         'gate_activation': 'sigmoid',               # gate activation function
-        'optimization_method': 'sgd',               # accepted value: 'sgd', 'adam'
+        'optimization_method': 'adam',              # accepted value: 'sgd', 'adam'
         'adam_beta1': 0.9,                          # 1st adam hyperparameter
         'adam_beta2': 0.999,                        # 2nd adam hyperparameter
         'adam_epsilon': 1e-4                        # 3rd adam hyperparameter

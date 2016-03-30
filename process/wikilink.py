@@ -19,6 +19,8 @@ import sys
 import ftfy
 import json
 
+_filtering = True
+_threshold = 1200
 
 ###############################################
 # function to extract data from a single file #
@@ -295,10 +297,13 @@ def extract_guids(fnames, loadp, savep):
     guid = {'guid': entset}
     print '# guids: {0}'.format(len(entset))
 
-    # print '\t guid.json saved'
-    # g = open(savep + 'guid.json', 'w')
-    # json.dump(guid, g, indent = 4)
-    # g.close()
+    '''
+    print '\t guid.json saved'
+    g = open(savep + 'guid.json', 'w')
+    json.dump(guid, g, indent = 4)
+    g.close()
+    '''
+
     print '\t guid2name.json saved'
     h = open(savep + 'guid2name.json', 'w')
     json.dump(guid2text, h, indent = 4)
@@ -321,26 +326,28 @@ def compute_stats(fnames, path):
     ents = 0
     words = 0
 
-    for i in range(0, len(fnames)):
-        if fnames[i][-5:] != '.json':
-            continue
+    for name in fnames:
         ##################
         # load data file #
         ##################
-        # print 'On file {0}\n'.format(fnames[i])
-        f = open(path + fnames[i], 'r')
+        print 'On file {0}\n'.format(name)
+        f = open(path + name, 'r')
         data = json.load(f)
         f.close()
 
         ###########################
         # compute file statistics #
         ###########################
-        docs += len(data['data'])
         for d in data['data']:
+            if _filtering and (len(d['text'].split()) > _threshold):
+                continue
+
             for key, value in d['dict'].iteritems():
                 entset.add(value['freebase_id'])
             for w in d['text'].split():
                 wordset.add(w.lower())
+
+            docs += 1
             ents += len(d['dict'])
             words += len(d['text'].split())
 
@@ -364,9 +371,9 @@ if __name__ == '__main__':
         fnames = os.listdir(rawpath)
         fnames.sort()
 
-        for i in range(0, len(fnames)):
-            print '****** processing {0} ****** \n'.format(fnames[i])
-            extract_data(fnames[i], rawpath, extpath)
+        for name in fnames:
+            print '****** processing {0} ****** \n'.format(name)
+            extract_data(name, rawpath, extpath)
 
     ##################
     # option: filter #
@@ -375,9 +382,9 @@ if __name__ == '__main__':
         fnames = os.listdir(extpath)
         fnames.sort()
 
-        for i in range(0, len(fnames)):
-            print '****** filtering {0} ****** \n'.format(fnames[i])
-            filter_data(fnames[i], extpath)
+        for name in fnames:
+            print '****** filtering {0} ****** \n'.format(name)
+            filter_data(name, extpath)
 
     ################
     # option: guid #
@@ -393,10 +400,11 @@ if __name__ == '__main__':
     # option: count #
     #################
     if sys.argv[1] == '-count':
-        fnames = os.listdir('/scratch/data/freelink/{0}/'.format(sys.argv[2]))
+        fnames = os.listdir(extpath)
         fnames.sort()
 
         stats = compute_stats(fnames, extpath)
+
         print '# documents: {0}; # entities: {1}; vocabulary size: {2}'.format(stats['docs'], stats['ent_voc'], stats['word_voc'])
         print '\t - tokens / doc: {0}'.format(stats['words'] / float(stats['docs']))
         print '\t - entities / doc: {0}'.format(stats['ents'] / float(stats['docs']))

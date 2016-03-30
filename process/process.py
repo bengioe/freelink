@@ -15,6 +15,10 @@ from nltk.tokenize import word_tokenize
 from nltk.tokenize import sent_tokenize
 from nltk.corpus import stopwords
 
+_filtering = True
+_threshold = 1200
+random.seed(1234)
+
 def load_embedding(version):
     return cPickle.load(open('/scratch/data/embedding/' + 'glove.{0}.300d.pkl'.format(version), 'r'))
 
@@ -45,6 +49,27 @@ def flex_embedding(sent, embedding, remove):
         return numpy.mean(vects, axis = 0, dtype = 'float32')
     return embedding['mean']
 
+def transform_doc(doc, word2idx, voc_size, id2vects):
+    text, lex = [], []
+    for word in doc['text'].lower().split():
+        if word in doc['dict']:
+            keyset = doc['dict'].keys()
+            keyset.sort()
+            keyset.remove(word)
+            random.shuffle(keyset)
+
+            sample = keyset[random.randint(0, len(keyset) - 1)]
+            pos_e = id2vects[doc['dict'][word]['freebase_id']]
+            neg_e = id2vects[doc['dict'][sample]['freebase_id']]
+
+            text.append(voc_size + 1)
+            lex.append([pos_e, neg_e])
+        elif word not in word2idx:
+            text.append(voc_size)
+        else:
+            text.append(word2idx[word])
+    return numpy.int32(text), lex
+
 if __name__ == '__main__':
     #####################################################################
     # produce the vocabulary by selecting the top k most frequent words #
@@ -62,9 +87,12 @@ if __name__ == '__main__':
             print '- processing file {0}'.format(name)
             data = json.load(open(loadp + name, 'r'))
 
-            for sample in data['data']:
-                text = sample['text'].lower()
-                for word in text.split():
+            for doc in data['data']:
+                if _filtering and (len(doc['text'].split()) > _threshold):
+                    continue
+                for word in doc['text'].lower().split():
+                    if word in doc['dict']:
+                        continue
                     if word not in w_counts:
                         w_counts[word] = 0
                     w_counts[word] += 1
@@ -124,47 +152,39 @@ if __name__ == '__main__':
     # produce train / valid / test data #
     #####################################
     if sys.argv[1] == '-data':
-        random.seed(1234)
-        path = '/scratch/data/freelink/'
-        word2idx = json.load(open(path + 'vocabulary.json', 'r'))
-        vects = cPickle.load(open(path + '{0}_vects.pkl'.format(sys.argv[2]), 'r'))
-        size = len(word2idx)
+        loadp = '/scratch/data/wikilink/ext/'
+        savep = '/scratch/data/freelink/'
 
-        for f in ['train', 'valid', 'test']:
-            loadp = path + '{0}/'.format(f)
-            fnames = os.listdir(loadp)
-            fnames.sort()
+        fnames = os.listdir(loadp)
+        fnames.sort()
+        random.shuffle(fnames)
 
-            x, x_p = [], []
-            for name in fnames:
-                if name[-5:] != '.json':
-                    continue
+        partition = ['train', 'valid', 'test']
+        files = [fnames[:95], fnames[95:102], fnames[102:]]
 
-                data = json.load(open(loadp + name, 'r'))
-                for doc in data['data']:
-                    if len(doc['text'].split()) > int(sys.argv[3]):
-                        continue
+        word2idx = json.load(open(savep) + 'vocabulary.json', 'r')
+        voc_size = len(word2idx)
 
-                    text, lex = [], []
-                    for word in doc['text'].lower().split():
-                        if word in doc['dict']:
-                            text.append(size + 1)
-                            pos = vects[doc['dict'][word]['freebase_id']]
-                            entset = doc['dict'].keys()
-                            entset.remove(word)
-                            random.shuffle(entset)
-                            sample = entset[random.randint(0, len(entset) - 1)]
-                            neg = vects[doc['dict'][sample]['freebase_id']]
-                            lex.append([pos, neg])
-                        elif word not in word2idx:
-                            text.append(size)
-                        else:
-                            text.append(word2idx[word])
-                    x.append(numpy.int32(text))
-                    x_p.append(lex)
+        for p, f in zip(partition, files):
+            print 'Transforming {0} data......'.format(p)
+            path = savep + '{0}/'.format(p)
+            if not os.path.exists(path):
+                os.makedirs(path)
 
-            savep = loadp + '{0}/'.format(sys.argv[2])
-            if not os.path.exists(savep):
-                os.makedirs(savep)
-            print 'Saving {0}.pkl ......'.format(f)
-            cPickle.dump({'x': x, 'e': x_p}, open(savep + '{0}.pkl'.format(f), 'w'), -1)
+            for version in ['name', 'lex', 'flex']:
+                id2vects = cPickle.load(open(savep + '{0}_vects.pkl'.format(version), 'r'))
+                x, e = [], []
+
+                for fname in f:
+                    data = json.load(open(loadp + fname, 'r'))
+
+                    for doc in data['data']:
+                        if _filtering and (len(doc['text'].split()) > _threshold):
+                            continue
+
+                        text, lex = transform_doc(doc, word2idx, voc_size, id2vects)
+                        x.append(text)
+                        e.append(lex)
+
+                print '\t - version {0} ready! \t'.format(version)
+                cPickle.dump({'x': x, 'e': e}, open(path + 'train_{0}.pkl'.format(version), 'w'), -1)
