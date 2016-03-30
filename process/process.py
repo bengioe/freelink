@@ -49,7 +49,7 @@ def flex_embedding(sent, embedding, remove):
         return numpy.mean(vects, axis = 0, dtype = 'float32')
     return embedding['mean']
 
-def transform_doc(doc, word2idx, voc_size, id2vects):
+def transform_doc(doc, word2idx, voc_size, id2ee):
     text, lex = [], []
     for word in doc['text'].lower().split():
         if word in doc['dict']:
@@ -59,8 +59,8 @@ def transform_doc(doc, word2idx, voc_size, id2vects):
             random.shuffle(keyset)
 
             sample = keyset[random.randint(0, len(keyset) - 1)]
-            pos_e = id2vects[doc['dict'][word]['freebase_id']]
-            neg_e = id2vects[doc['dict'][sample]['freebase_id']]
+            pos_e = id2ee[doc['dict'][word]['freebase_id']]
+            neg_e = id2ee[doc['dict'][sample]['freebase_id']]
 
             text.append(voc_size + 1)
             lex.append([pos_e, neg_e])
@@ -103,12 +103,12 @@ if __name__ == '__main__':
         print 'Total # of words: {0}; selected vocabulary size: {1}'.format(len(w_sorted), size)
 
         # save word-to-index dictionary #
-        vocabulary = {}
+        word2idx = {}
         for i in range(0, size):
-            vocabulary[w_sorted[i][0]] = i
+            word2idx[w_sorted[i][0]] = i
 
-        json.dump(vocabulary, open(savep + 'vocabulary.json', 'w'), indent = 4)
-        print '\t vocabulary saved!'
+        json.dump(word2idx, open(savep + 'word2idx.json', 'w'), indent = 4)
+        print '\t word2idx saved!'
 
     ################################
     # produce entity proxy vectors #
@@ -120,33 +120,33 @@ if __name__ == '__main__':
 
         # generate embedding based on entity names #
         guid2name = json.load(open(loadp + 'guid2name.json', 'r'))
-        name_vects = {}
+        ee_name = {}
 
         for guid, name in guid2name.iteritems():
-            name_vects[guid] = name_embedding(name, embedding)
+            ee_name[guid] = name_embedding(name, embedding)
 
         print 'Dumping name embeddings ...'
-        cPickle.dump(name_vects, open(savep + 'name_vects.pkl', 'w'), -1)
-        print '\t Saved'
+        cPickle.dump(ee_name, open(savep + 'ee_name.pkl', 'w'), -1)
+        print '\t Saved!'
 
         # generate embedding based on lexical resources #
         guid2lex = json.load(open(loadp + 'guid2lex.json', 'r'))
         remove = set(stopwords.words('english')) | set(string.punctuation)
-        lex_vects = {}
-        flex_vects = {}
+        ee_lex = {}
+        ee_flex = {}
 
         for guid, lex in guid2lex.iteritems():
             sent = sent_tokenize(lex)[0]
-            lex_vects[guid] = lex_embedding(sent, embedding)
-            flex_vects[guid] = flex_embedding(sent, embedding, remove)
+            ee_lex[guid] = lex_embedding(sent, embedding)
+            ee_flex[guid] = flex_embedding(sent, embedding, remove)
 
         print 'Dumping lexical embeddings ...'
-        cPickle.dump(lex_vects, open(savep + 'lex_vects.pkl', 'w'), -1)
-        print '\t Saved'
+        cPickle.dump(ee_lex, open(savep + 'ee_lex.pkl', 'w'), -1)
+        print '\t Saved!'
 
         print 'Dumping filtered lexical embeddings ...'
-        cPickle.dump(flex_vects, open(savep + 'flex_vects.pkl', 'w'), -1)
-        print '\t Saved'
+        cPickle.dump(ee_flex, open(savep + 'ee_flex.pkl', 'w'), -1)
+        print '\t Saved!'
 
     #####################################
     # produce train / valid / test data #
@@ -162,7 +162,7 @@ if __name__ == '__main__':
         partition = ['train', 'valid', 'test']
         files = [fnames[:95], fnames[95:102], fnames[102:]]
 
-        word2idx = json.load(open(savep) + 'vocabulary.json', 'r')
+        word2idx = json.load(open(savep + 'word2idx.json', 'r'))
         voc_size = len(word2idx)
 
         for p, f in zip(partition, files):
@@ -172,7 +172,7 @@ if __name__ == '__main__':
                 os.makedirs(path)
 
             for version in ['name', 'lex', 'flex']:
-                id2vects = cPickle.load(open(savep + '{0}_vects.pkl'.format(version), 'r'))
+                id2ee = cPickle.load(open(savep + 'ee_{0}.pkl'.format(version), 'r'))
                 x, e = [], []
 
                 for fname in f:
@@ -180,12 +180,12 @@ if __name__ == '__main__':
                     for doc in data['data']:
                         if _filtering and (len(doc['text'].split()) > _threshold):
                             continue
-                        text, lex = transform_doc(doc, word2idx, voc_size, id2vects)
+                        text, lex = transform_doc(doc, word2idx, voc_size, id2ee)
                         x.append(text)
                         e.append(lex)
 
-                print '\t - version {0} ready! \t'.format(version)
-                cPickle.dump({'x': x, 'e': e}, open(path + 'train_{0}.pkl'.format(version), 'w'), -1)
+                print '\t - version [{0}] ready! \t'.format(version)
+                cPickle.dump({'x': x, 'e': e}, open(path + '{0}_{1}.pkl'.format(p, version), 'w'), -1)
 
     ###################################
     # count train / valid / test data #
@@ -197,4 +197,4 @@ if __name__ == '__main__':
         test = cPickle.load(open(path + 'test/test_name.pkl', 'r'))
 
         print '# docs available: {0}'.format(len(train['x']) + len(valid['x']) + len(test['x']))
-        print '\t train / valid / test: {0}; {1}; {2}'.format(len(train['x']), len(valid['x']), len(test['x']))
+        print '\t train: {0}; valid: {1}; test: {2}'.format(len(train['x']), len(valid['x']), len(test['x']))

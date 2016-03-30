@@ -317,20 +317,20 @@ def compute_stats(fnames, path):
     ################
     # global stats #
     ################
-    docs = 0
+    num_docs = 0
     entset = set([])
     wordset = set([])
     ###############
     # local stats #
     ###############
-    ents = 0
-    words = 0
+    num_ents = 0
+    num_words = 0
 
     for name in fnames:
         ##################
         # load data file #
         ##################
-        print 'On file {0}\n'.format(name)
+        print 'On file {0}'.format(name)
         f = open(path + name, 'r')
         data = json.load(f)
         f.close()
@@ -338,22 +338,22 @@ def compute_stats(fnames, path):
         ###########################
         # compute file statistics #
         ###########################
-        for d in data['data']:
-            if _filtering and (len(d['text'].split()) > _threshold):
+        for doc in data['data']:
+            if _filtering and (len(doc['text'].split()) > _threshold):
                 continue
 
-            for key, value in d['dict'].iteritems():
+            for key, value in doc['dict'].iteritems():
                 entset.add(value['freebase_id'])
-            for w in d['text'].split():
-                wordset.add(w.lower())
+            for word in doc['text'].lower().split():
+                wordset.add(word)
 
-            docs += 1
-            ents += len(d['dict'])
-            words += len(d['text'].split())
+            num_docs += 1
+            num_ents += len(doc['dict'])
+            num_words += len(doc['text'].split())
 
     # return type: statistics dictionary
-    return {'docs': docs, 'ent_voc': len(entset), 'word_voc': len(wordset),
-            'ents': ents, 'words': words}
+    return {'docs': num_docs, 'ent_voc': len(entset), 'word_voc': len(wordset),
+            'ents': num_ents, 'words': num_words}
 
 
 #################

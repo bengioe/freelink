@@ -23,11 +23,11 @@ def load_embeddings(path, size, dim, random):
         return theano.shared(numpy.random.random((size, 300)).astype(config.floatX))
 
     glove = cPickle.load(open('/scratch/data/embedding/' + 'glove.840B.300d.pkl', 'r'))
-    vocabulary = json.load(open(path + 'vocabulary.json', 'r'))
-    v_sorted = sorted(vocabulary.items(), key = lambda item : item[1])
+    word2idx = json.load(open(path + 'word2idx.json', 'r'))
+    w_sorted = sorted(word2idx.items(), key = lambda item : item[1])
     word_vectors = []
 
-    for item in v_sorted:
+    for item in w_sorted:
         if item[0] in glove['glove']:
             word_vectors += [glove['glove'][item[0]]]
         else:
@@ -205,9 +205,9 @@ if __name__ == '__main__':
         'lex_version': 'name',                      # lexical embedding version
         'valid_freq': 5,                            # frequency to test on validation set
         'vocab_size': 60000 + 2,                    # vocabulary size
-        'random_init': False,                       # random initialization of word embeddings
+        'random_init': True,                        # random initialization of word embeddings
         'num_epochs': 100,                          # number of training epochs
-        'batch_size': 32,                           # size of mini-batch
+        'batch_size': 64,                           # size of mini-batch
         'lr_rate': 0.0025,                          # learning rate
         'embedding_dim': 300,                       # word embedding dimension
         'lstm_dim': 128,                            # lstm layer dimension
