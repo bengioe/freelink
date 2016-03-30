@@ -177,14 +177,24 @@ if __name__ == '__main__':
 
                 for fname in f:
                     data = json.load(open(loadp + fname, 'r'))
-
                     for doc in data['data']:
                         if _filtering and (len(doc['text'].split()) > _threshold):
                             continue
-
                         text, lex = transform_doc(doc, word2idx, voc_size, id2vects)
                         x.append(text)
                         e.append(lex)
 
                 print '\t - version {0} ready! \t'.format(version)
                 cPickle.dump({'x': x, 'e': e}, open(path + 'train_{0}.pkl'.format(version), 'w'), -1)
+
+    ###################################
+    # count train / valid / test data #
+    ###################################
+    if sys.argv[1] == '-count':
+        path = '/scratch/data/freelink/'
+        train = cPickle.load(open(path + 'train/train_name.pkl', 'r'))
+        valid = cPickle.load(open(path + 'valid/valid_name.pkl', 'r'))
+        test = cPickle.load(open(path + 'test/test_name.pkl', 'r'))
+
+        print '# docs available: {0}'.format(len(train['x']) + len(valid['x']) + len(test['x']))
+        print '\t train / valid / test: {0}; {1}; {2}'.format(len(train['x']), len(valid['x']), len(test['x']))
