@@ -203,12 +203,12 @@ if __name__ == '__main__':
     settings = {
         'datapath': '/scratch/data/freelink/',      # path to dataset
         'lex_version': 'name',                      # lexical embedding version
-        'valid_freq': 5,                            # frequency to test on validation set
+        'valid_freq': 1,                            # frequency to test on validation set
         'vocab_size': 60000 + 2,                    # vocabulary size
-        'random_init': True,                        # random initialization of word embeddings
+        'random_init': False,                       # random initialization of word embeddings
         'num_epochs': 100,                          # number of training epochs
-        'batch_size': 64,                           # size of mini-batch
-        'lr_rate': 0.0025,                          # learning rate
+        'batch_size': 32,                           # size of mini-batch
+        'lr_rate': 0.001,                           # learning rate
         'embedding_dim': 300,                       # word embedding dimension
         'lstm_dim': 128,                            # lstm layer dimension
         'use_gate': False,                          # use filter gate
