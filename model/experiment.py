@@ -22,7 +22,7 @@ def load_embeddings(path, size, dim, random):
     if random:
         return theano.shared(numpy.random.random((size, 300)).astype(config.floatX))
 
-    glove = cPickle.load(open('/scratch/data/embedding/' + 'glove.840B.300d.pkl', 'r'))
+    glove = cPickle.load(open(path + 'glove.840B.300d.pkl', 'r'))
     word2idx = json.load(open(path + 'word2idx.json', 'r'))
     w_sorted = sorted(word2idx.items(), key = lambda item : item[1])
     word_vectors = []
