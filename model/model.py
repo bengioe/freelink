@@ -141,8 +141,8 @@ class Predictor:
 
         if use_gate:
             act = {'sigmoid': T.nnet.sigmoid, 'relu': lambda x : T.maximum(0, x), None: lambda x : x}[gate_activation]
-            gated_mask = act(self.lstm2gate.apply(indexed_hs).dimshuffle(0, 1, 'x', 2) + self.e2gate.apply(e))
-            gated_es = gated_mask * e
+            gate_mask = act(self.lstm2gate.apply(indexed_hs).dimshuffle(0, 1, 'x', 2) + self.e2gate.apply(e))
+            gated_es = gate_mask * e
 
         self.W = theano.shared(numpy.random.uniform(-.1, .1, (embedding_dim, lstm_dim)).astype(config.floatX), 'W')
         self.b = theano.shared(numpy.float32(0.), 'b')

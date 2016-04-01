@@ -85,7 +85,6 @@ def launch_exp(settings):
     print 'Settings:', settings, '\n'
 
     float32 = lambda x : numpy.float32(x)
-
     train = cPickle.load(open(settings['datapath'] + 'train/train_{0}.pkl'.format(settings['lex_version']), 'r'))
     train_docs = train['x']
     train_lexs = train['e']
@@ -155,6 +154,7 @@ def launch_exp(settings):
 
         exp_results['train_results']['costs'].append(epoch_cost / num_train)
         exp_results['train_results']['errors'].append(epoch_error * 1. / epoch_nblanks)
+        model.save_params(exp_dir + 'curr_train_model.pkl')
 
         if (epoch + 1) % settings['valid_freq'] == 0:
             valid_docs, valid_lexs = shuffle_data(valid_docs, valid_lexs)
@@ -187,14 +187,14 @@ def launch_exp(settings):
             print '\t\t error: {0}; time elapsed: {1} s\n'.format(valid_error * 1. / valid_nblanks, numpy.round(valid_elapsed, 2))
 
             exp_results['valid_results'].append((epoch + 1, valid_error * 1. / valid_nblanks))
-
-            model.save_params(exp_dir + 'curr_train_model.pkl')
             if (valid_error * 1. / valid_nblanks) < best_valid_err:
                 best_valid_err = valid_error * 1. / valid_nblanks
                 model.save_params(exp_dir + 'best_valid_model.pkl')
                 print '\t\t [NEW best validation error: {0}, save current model]\n'.format(best_valid_err)
 
-    json.dump(exp_results, open(exp_dir + 'exp_results.json', 'w'), indent = 4)
+        # save current experiment results #
+        json.dump(exp_results, open(exp_dir + 'exp_results.json', 'w'), indent = 4)
+
     print 'Training complete'
     print '\t - training cost: {0}; training error: {1}'.format(exp_results['train_results']['costs'][-1], exp_results['train_results']['errors'][-1])
     print '\t - best validation error: {0}'.format(best_valid_err)
