@@ -85,6 +85,7 @@ def launch_exp(settings):
     print 'Settings:', settings, '\n'
 
     float32 = lambda x : numpy.float32(x)
+
     train = cPickle.load(open(settings['datapath'] + 'train/train_{0}.pkl'.format(settings['lex_version']), 'r'))
     train_docs = train['x']
     train_lexs = train['e']
@@ -157,7 +158,6 @@ def launch_exp(settings):
         model.save_params(exp_dir + 'curr_train_model.pkl')
 
         if (epoch + 1) % settings['valid_freq'] == 0:
-            valid_docs, valid_lexs = shuffle_data(valid_docs, valid_lexs)
             valid_error, valid_nblanks = 0, 0
             valid_t0 = time.time()
 
