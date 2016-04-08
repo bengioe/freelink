@@ -201,17 +201,17 @@ def launch_exp(settings):
 
 if __name__ == '__main__':
     settings = {
-        'datapath': '/scratch/data/freelink/',      # path to dataset
-        'lex_version': 'name',                      # lexical embedding version
+        'datapath': sys.argv[1],                    # path to dataset
+        'lex_version': 'flex',                      # lexical embedding version
         'valid_freq': 1,                            # frequency to test on validation set
         'vocab_size': 60000 + 2,                    # vocabulary size
         'random_init': False,                       # random initialization of word embeddings
-        'num_epochs': 100,                          # number of training epochs
-        'batch_size': 32,                           # size of mini-batch
-        'lr_rate': 0.001,                           # learning rate
+        'num_epochs': 20,                           # number of training epochs
+        'batch_size': 64,                           # size of mini-batch
+        'lr_rate': 0.00025,                         # learning rate
         'embedding_dim': 300,                       # word embedding dimension
         'lstm_dim': 128,                            # lstm layer dimension
-        'use_gate': False,                          # use filter gate
+        'use_gate': True,                           # use filter gate
         'gate_activation': 'sigmoid',               # gate activation function
         'optimization_method': 'adam',              # accepted value: 'sgd', 'adam'
         'adam_beta1': 0.9,                          # 1st adam hyperparameter
