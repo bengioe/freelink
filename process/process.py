@@ -198,3 +198,9 @@ if __name__ == '__main__':
 
         print '# docs available: {0}'.format(len(train['x']) + len(valid['x']) + len(test['x']))
         print '\t train: {0}; valid: {1}; test: {2}'.format(len(train['x']), len(valid['x']), len(test['x']))
+        print '# empty slots: {0}'.format(sum([len(i) for i in train['e']]) +
+                                          sum([len(i) for i in valid['e']]) +
+                                          sum([len(i) for i in test['e']]))
+        print '\t train: {0}; valid: {1}; test: {2}'.format(sum([len(i) for i in train['e']]),
+                                                            sum([len(i) for i in valid['e']]),
+                                                            sum([len(i) for i in test['e']]))

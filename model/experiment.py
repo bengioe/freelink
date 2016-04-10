@@ -113,7 +113,7 @@ def launch_exp(settings):
     model = Predictor(embeddings,
                       embedding_dim = settings['embedding_dim'], lstm_dim = settings['lstm_dim'],
                       use_gate = settings['use_gate'], gate_activation = settings['gate_activation'],
-                      optimization_method = optimization_method)
+                      crs_term = settings['crs_term'], optimization_method = optimization_method)
 
     exp_results = {'train_results': {'costs': [], 'errors': []}, 'valid_results': []}
     best_valid_err = 1.
@@ -208,11 +208,12 @@ if __name__ == '__main__':
         'random_init': False,                       # random initialization of word embeddings
         'num_epochs': 20,                           # number of training epochs
         'batch_size': 64,                           # size of mini-batch
-        'lr_rate': 0.00025,                         # learning rate
+        'lr_rate': 0.0005,                          # learning rate
         'embedding_dim': 300,                       # word embedding dimension
         'lstm_dim': 128,                            # lstm layer dimension
         'use_gate': True,                           # use filter gate
         'gate_activation': 'sigmoid',               # gate activation function
+        'crs_term': False,                          # add cross term to classifier
         'optimization_method': 'adam',              # accepted value: 'sgd', 'adam'
         'adam_beta1': 0.9,                          # 1st adam hyperparameter
         'adam_beta2': 0.999,                        # 2nd adam hyperparameter
