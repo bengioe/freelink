@@ -49,26 +49,43 @@ def flex_embedding(sent, embedding, remove):
         return numpy.mean(vects, axis = 0, dtype = 'float32')
     return embedding['mean']
 
-def transform_doc(doc, word2idx, voc_size, id2ee):
+def transform_doc(doc, num_negs, word2idx, voc_size, id2ee):
     text, lex = [], []
     for word in doc['text'].lower().split():
         if word in doc['dict']:
             keyset = doc['dict'].keys()
             keyset.sort()
             keyset.remove(word)
-            random.shuffle(keyset)
 
+            random.shuffle(keyset)
             sample = keyset[random.randint(0, len(keyset) - 1)]
-            pos_e = id2ee[doc['dict'][word]['freebase_id']]
-            neg_e = id2ee[doc['dict'][sample]['freebase_id']]
+
+            pos_id = doc['dict'][word]['freebase_id']
+            pos_ee = id2ee[pos_id]
+            neg_id = doc['dict'][sample]['freebase_id']
+            neg_ee = id2ee[neg_id]
 
             text.append(voc_size + 1)
-            lex.append([pos_e, neg_e])
+            lex.append([pos_ee, neg_ee] + sample_negatives(num_negs - 1, id2ee, pos_id, neg_id))
         elif word not in word2idx:
             text.append(voc_size)
         else:
             text.append(word2idx[word])
     return numpy.int32(text), lex
+
+def sample_negatives(num_negs, id2ee, pos_id, neg_id):
+    neg_ees = []
+    if num_negs == 0:
+        return neg_ees
+
+    keyset = id2ee.keys()
+    keyset.sort()
+    keyset.remove(pos_id)
+    keyset.remove(neg_id)
+
+    random.shuffle(keyset)
+    neg_ids = [random.randint(0, len(keyset) - 1) for i in range(0, num_negs)]
+    return [id2ee[keyset[i]] for i in neg_ids]
 
 if __name__ == '__main__':
     #####################################################################
@@ -154,6 +171,7 @@ if __name__ == '__main__':
     if sys.argv[1] == '-data':
         loadp = '/scratch/data/wikilink/ext/'
         savep = '/scratch/data/freelink/'
+        num_negs = 5
 
         fnames = os.listdir(loadp)
         fnames.sort()
@@ -164,7 +182,7 @@ if __name__ == '__main__':
 
         word2idx = json.load(open(savep + 'word2idx.json', 'r'))
         voc_size = len(word2idx)
-        
+
         for p, f in zip(partition, files):
             print 'Transforming {0} data......'.format(p)
             path = savep + '{0}/'.format(p)
@@ -180,11 +198,11 @@ if __name__ == '__main__':
                     for doc in data['data']:
                         if _filtering and (len(doc['text'].split()) > _threshold):
                             continue
-                        text, lex = transform_doc(doc, word2idx, voc_size, id2ee)
+                        text, lex = transform_doc(doc, num_negs, word2idx, voc_size, id2ee)
                         x.append(text)
                         e.append(lex)
 
-                print '\t - version [{0}] ready! \t'.format(version)
+                print '\t - version [{0}] ready! # negative examples: {1}'.format(version, num_negs)
                 cPickle.dump({'x': x, 'e': e}, open(path + '{0}_{1}.pkl'.format(p, version), 'w'), -1)
 
     ###################################
@@ -198,6 +216,7 @@ if __name__ == '__main__':
 
         print '# docs available: {0}'.format(len(train['x']) + len(valid['x']) + len(test['x']))
         print '\t train: {0}; valid: {1}; test: {2}'.format(len(train['x']), len(valid['x']), len(test['x']))
+
         print '# empty slots: {0}'.format(sum([len(i) for i in train['e']]) +
                                           sum([len(i) for i in valid['e']]) +
                                           sum([len(i) for i in test['e']]))
