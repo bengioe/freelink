@@ -207,13 +207,13 @@ if __name__ == '__main__':
         'vocab_size': 60000 + 2,                    # vocabulary size
         'random_init': False,                       # random initialization of word embeddings
         'num_epochs': 20,                           # number of training epochs
-        'batch_size': 64,                           # size of mini-batch
+        'batch_size': 128,                          # size of mini-batch
         'lr_rate': 0.0005,                          # learning rate
         'embedding_dim': 300,                       # word embedding dimension
         'lstm_dim': 128,                            # lstm layer dimension
         'use_gate': True,                           # use filter gate
         'gate_activation': 'sigmoid',               # gate activation function
-        'crs_term': False,                          # add cross term to classifier
+        'crs_term': True,                           # add cross term to classifier
         'optimization_method': 'adam',              # accepted value: 'sgd', 'adam'
         'adam_beta1': 0.9,                          # 1st adam hyperparameter
         'adam_beta2': 0.999,                        # 2nd adam hyperparameter

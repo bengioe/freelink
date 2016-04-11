@@ -1,7 +1,7 @@
 '''
 created on Mar 12, 2016
 
-@author leolong
+@author: leolong
 '''
 
 import os
@@ -164,7 +164,7 @@ if __name__ == '__main__':
 
         word2idx = json.load(open(savep + 'word2idx.json', 'r'))
         voc_size = len(word2idx)
-
+        
         for p, f in zip(partition, files):
             print 'Transforming {0} data......'.format(p)
             path = savep + '{0}/'.format(p)

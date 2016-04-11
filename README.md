@@ -25,3 +25,6 @@
 
 ### /model/experiment.py
 * Finish launch script
+
+### /model/baseline.py
+* Implement most frequent baseline
