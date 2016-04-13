@@ -49,7 +49,7 @@ def flex_embedding(sent, embedding, remove):
         return numpy.mean(vects, axis = 0)
     return embedding['mean']
 
-def transform_train_doc(doc, num_negs, word2idx, voc_size, id2ee):
+def transform_train_doc(doc, num_negs, word2idx, voc_size, id2ee, guids):
     text, lex = [], []
     for word in doc['text'].lower().split():
         if word in doc['dict']:
@@ -68,27 +68,26 @@ def transform_train_doc(doc, num_negs, word2idx, voc_size, id2ee):
 
             text.append(voc_size + 1)
             if pos_id != neg_id:
-                lex.append([pos_ee, neg_ee] + sample_negatives(num_negs - 1, id2ee, pos_id, neg_id))
+                lex.append([pos_ee, neg_ee] + sample_negatives(num_negs - 1, pos_id, neg_id, id2ee, guids))
             else:
-                lex.append([pos_ee] + sample_negatives(num_negs, id2ee, pos_id, neg_id))
+                lex.append([pos_ee] + sample_negatives(num_negs, pos_id, neg_id, id2ee, guids))
         elif word not in word2idx:
             text.append(voc_size)
         else:
             text.append(word2idx[word])
     return numpy.int32(text), lex
 
-def sample_negatives(num_negs, id2ee, pos_id, neg_id):
-    if num_negs == 0:
-        return []
+def sample_negatives(num_negs, pos_id, neg_id, id2ee, guids):
+    neg_ees = []
 
-    keyset = set(id2ee.keys())
-    keyset.remove(pos_id)
-    if pos_id != neg_id:
-        keyset.remove(neg_id)
+    while num_negs > 0:
+        sample = guids[random.randint(0, len(guids) - 1)]
+        if (sample == pos_id) or (sample == neg_id):
+            continue
+        neg_ees.append(id2ee[sample])
+        num_negs -= 1
 
-    keyset = list(keyset)
-    neg_ids = [random.randint(0, len(keyset) - 1) for i in range(0, num_negs)]
-    return [id2ee[keyset[i]] for i in neg_ids]
+    return neg_ees
 
 def transform_test_doc(doc, word2idx, voc_size, id2ee):
     text, lex = [], []
@@ -101,11 +100,11 @@ def transform_test_doc(doc, word2idx, voc_size, id2ee):
 
             pos_id = doc['dict'][word]['freebase_id']
             neg_ids = []
-            for i in keyset:
-                if i != pos_id:
-                    neg_ids.append(i)
+            for k in keyset:
+                if doc['dict'][k]['freebase_id'] != pos_id:
+                    neg_ids.append(doc['dict'][k]['freebase_id'])
 
-            text(voc_size + 1)
+            text.append(voc_size + 1)
             lex.append([id2ee[pos_id]] + [id2ee[i] for i in neg_ids])
         elif word not in word2idx:
             text.append(voc_size)
@@ -223,6 +222,7 @@ if __name__ == '__main__':
 
             for version in ['rand', 'name', 'lex', 'flex']:
                 id2ee = cPickle.load(open(savep + 'ee_{0}.pkl'.format(version), 'r'))
+                guids = id2ee.keys()
                 x, e = [], []
 
                 for fname in f:
@@ -231,7 +231,7 @@ if __name__ == '__main__':
                         if _filtering and (len(doc['text'].split()) > _threshold):
                             continue
                         if p == 'train':
-                            text, lex = transform_train_doc(doc, num_negs, word2idx, voc_size, id2ee)
+                            text, lex = transform_train_doc(doc, num_negs, word2idx, voc_size, id2ee, guids)
                         else:
                             text, lex = transform_test_doc(doc, word2idx, voc_size, id2ee)
                         x.append(text)

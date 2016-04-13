@@ -67,9 +67,9 @@ def prep_y_batch(e):
     y[:, :, 0] = 1
     return y
 
-def prep_e_batch(max_nblanks, actual_size, batch_es):
-    e = numpy.zeros((max_nblanks, actual_size, 2, 300), dtype = 'float32')
-    masks = numpy.zeros((max_nblanks, actual_size), dtype = 'float32')
+def prep_e_batch(max_nblanks, actual_size, num_negs, batch_es):
+    e = numpy.zeros((max_nblanks, actual_size, num_negs + 1, 300), dtype = 'float32')
+    masks = numpy.zeros((max_nblanks, actual_size, dtype = 'float32'))
 
     for j, ei in enumerate(batch_es):
         e[:len(ei), j] = ei
@@ -133,7 +133,7 @@ def launch_exp(settings):
 
             # the blank embeddings and masks #
             batch_es, nblanks, max_nblanks = get_e_batch(train_lexs, batch, batch_size)
-            e, masks = prep_e_batch(max_nblanks, actual_size, batch_es)
+            e, masks = prep_e_batch(max_nblanks, actual_size, settings['num_negatives'], batch_es)
 
             # the Xs into an array, and blank indexes #
             max_len = max(len(i) for i in batch_xs)
@@ -219,7 +219,7 @@ if __name__ == '__main__':
         'adam_beta1': 0.9,                          # 1st adam hyperparameter
         'adam_beta2': 0.999,                        # 2nd adam hyperparameter
         'adam_epsilon': 1e-4,                       # 3rd adam hyperparameter
-        'neg_examples': 5                           # amount of negative examples
+        'num_negatives': 5                          # number of negative examples
     }
 
     #####################
