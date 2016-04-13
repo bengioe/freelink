@@ -28,7 +28,7 @@ def name_embedding(name, embedding):
         if word in embedding['glove']:
             vects.append(embedding['glove'][word])
     if len(vects) > 0:
-        return numpy.mean(vects, axis = 0, dtype = 'float32')
+        return numpy.mean(vects, axis = 0)
     return embedding['mean']
 
 def lex_embedding(sent, embedding):
@@ -37,7 +37,7 @@ def lex_embedding(sent, embedding):
         if word in embedding['glove']:
             vects.append(embedding['glove'][word])
     if len(vects) > 0:
-        return numpy.mean(vects, axis = 0, dtype = 'float32')
+        return numpy.mean(vects, axis = 0)
     return embedding['mean']
 
 def flex_embedding(sent, embedding, remove):
@@ -46,10 +46,10 @@ def flex_embedding(sent, embedding, remove):
         if (word in embedding['glove']) and (word not in remove):
             vects.append(embedding['glove'][word])
     if len(vects) > 0:
-        return numpy.mean(vects, axis = 0, dtype = 'float32')
+        return numpy.mean(vects, axis = 0)
     return embedding['mean']
 
-def transform_doc(doc, num_negs, word2idx, voc_size, id2ee):
+def transform_train_doc(doc, num_negs, word2idx, voc_size, id2ee):
     text, lex = [], []
     for word in doc['text'].lower().split():
         if word in doc['dict']:
@@ -62,11 +62,15 @@ def transform_doc(doc, num_negs, word2idx, voc_size, id2ee):
 
             pos_id = doc['dict'][word]['freebase_id']
             pos_ee = id2ee[pos_id]
+
             neg_id = doc['dict'][sample]['freebase_id']
             neg_ee = id2ee[neg_id]
 
             text.append(voc_size + 1)
-            lex.append([pos_ee, neg_ee] + sample_negatives(num_negs - 1, id2ee, pos_id, neg_id))
+            if pos_id != neg_id:
+                lex.append([pos_ee, neg_ee] + sample_negatives(num_negs - 1, id2ee, pos_id, neg_id))
+            else:
+                lex.append([pos_ee] + sample_negatives(num_negs, id2ee, pos_id, neg_id))
         elif word not in word2idx:
             text.append(voc_size)
         else:
@@ -74,18 +78,40 @@ def transform_doc(doc, num_negs, word2idx, voc_size, id2ee):
     return numpy.int32(text), lex
 
 def sample_negatives(num_negs, id2ee, pos_id, neg_id):
-    neg_ees = []
     if num_negs == 0:
-        return neg_ees
+        return []
 
-    keyset = id2ee.keys()
-    keyset.sort()
+    keyset = set(id2ee.keys())
     keyset.remove(pos_id)
-    keyset.remove(neg_id)
+    if pos_id != neg_id:
+        keyset.remove(neg_id)
 
-    random.shuffle(keyset)
+    keyset = list(keyset)
     neg_ids = [random.randint(0, len(keyset) - 1) for i in range(0, num_negs)]
     return [id2ee[keyset[i]] for i in neg_ids]
+
+def transform_test_doc(doc, word2idx, voc_size, id2ee):
+    text, lex = [], []
+    for word in doc['text'].lower().split():
+        if word in doc['dict']:
+            keyset = doc['dict'].keys()
+            keyset.sort()
+            keyset.remove(word)
+            random.shuffle(keyset)
+
+            pos_id = doc['dict'][word]['freebase_id']
+            neg_ids = []
+            for i in keyset:
+                if i != pos_id:
+                    neg_ids.append(i)
+
+            text(voc_size + 1)
+            lex.append([id2ee[pos_id]] + [id2ee[i] for i in neg_ids])
+        elif word not in word2idx:
+            text.append(voc_size)
+        else:
+            text.append(word2idx[word])
+    return numpy.int32(text), lex
 
 if __name__ == '__main__':
     #####################################################################
@@ -137,12 +163,18 @@ if __name__ == '__main__':
 
         # generate embedding based on entity names #
         guid2name = json.load(open(loadp + 'guid2name.json', 'r'))
+        ee_rand = {}
         ee_name = {}
 
         for guid, name in guid2name.iteritems():
-            ee_name[guid] = name_embedding(name, embedding)
+            ee_rand[guid] = numpy.random.uniform(-1, 1, 300).astype('float32')
+            ee_name[guid] = name_embedding(name, embedding).astype('float32')
 
-        print 'Dumping name embeddings ...'
+        print 'Dumping random embeddings ......'
+        cPickle.dump(ee_rand, open(savep + 'ee_rand.pkl', 'w'), - 1)
+        print '\t Saved!'
+
+        print 'Dumping name embeddings ......'
         cPickle.dump(ee_name, open(savep + 'ee_name.pkl', 'w'), -1)
         print '\t Saved!'
 
@@ -154,14 +186,14 @@ if __name__ == '__main__':
 
         for guid, lex in guid2lex.iteritems():
             sent = sent_tokenize(lex)[0]
-            ee_lex[guid] = lex_embedding(sent, embedding)
-            ee_flex[guid] = flex_embedding(sent, embedding, remove)
+            ee_lex[guid] = lex_embedding(sent, embedding).astype('float32')
+            ee_flex[guid] = flex_embedding(sent, embedding, remove).astype('float32')
 
-        print 'Dumping lexical embeddings ...'
+        print 'Dumping lexical embeddings ......'
         cPickle.dump(ee_lex, open(savep + 'ee_lex.pkl', 'w'), -1)
         print '\t Saved!'
 
-        print 'Dumping filtered lexical embeddings ...'
+        print 'Dumping filtered lexical embeddings ......'
         cPickle.dump(ee_flex, open(savep + 'ee_flex.pkl', 'w'), -1)
         print '\t Saved!'
 
@@ -178,7 +210,7 @@ if __name__ == '__main__':
         random.shuffle(fnames)
 
         partition = ['train', 'valid', 'test']
-        files = [fnames[:95], fnames[95:102], fnames[102:]]
+        files = [fnames[0:97], fnames[97:103], fnames[103:109]]
 
         word2idx = json.load(open(savep + 'word2idx.json', 'r'))
         voc_size = len(word2idx)
@@ -189,7 +221,7 @@ if __name__ == '__main__':
             if not os.path.exists(path):
                 os.makedirs(path)
 
-            for version in ['name', 'lex', 'flex']:
+            for version in ['rand', 'name', 'lex', 'flex']:
                 id2ee = cPickle.load(open(savep + 'ee_{0}.pkl'.format(version), 'r'))
                 x, e = [], []
 
@@ -198,7 +230,10 @@ if __name__ == '__main__':
                     for doc in data['data']:
                         if _filtering and (len(doc['text'].split()) > _threshold):
                             continue
-                        text, lex = transform_doc(doc, num_negs, word2idx, voc_size, id2ee)
+                        if p == 'train':
+                            text, lex = transform_train_doc(doc, num_negs, word2idx, voc_size, id2ee)
+                        else:
+                            text, lex = transform_test_doc(doc, word2idx, voc_size, id2ee)
                         x.append(text)
                         e.append(lex)
 

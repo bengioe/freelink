@@ -90,6 +90,7 @@ def launch_exp(settings):
     train_docs = train['x']
     train_lexs = train['e']
     num_train = len(train_docs)
+
     valid = cPickle.load(open(settings['datapath'] + 'valid/valid_{0}.pkl'.format(settings['lex_version']), 'r'))
     valid_docs = valid['x']
     valid_lexs = valid['e']
@@ -217,7 +218,8 @@ if __name__ == '__main__':
         'optimization_method': 'adam',              # accepted value: 'sgd', 'adam'
         'adam_beta1': 0.9,                          # 1st adam hyperparameter
         'adam_beta2': 0.999,                        # 2nd adam hyperparameter
-        'adam_epsilon': 1e-4                        # 3rd adam hyperparameter
+        'adam_epsilon': 1e-4,                       # 3rd adam hyperparameter
+        'neg_examples': 5                           # amount of negative examples
     }
 
     #####################
