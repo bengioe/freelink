@@ -57,25 +57,49 @@ def prep_x_batch(max_len, max_nblanks, actual_size, batch_xs):
 
     for j, xi in enumerate(batch_xs):
         x[:xi.shape[0], j] = xi
-        nonzeros = numpy.nonzero(xi == 60001)[0]
+        nonzeros = numpy.nonzero(xi == 30000 + 1)[0]
         bid[:nonzeros.shape[0], j] = nonzeros
 
     return x, bid
 
-def prep_y_batch(e):
-    y = numpy.zeros(e.shape[:3]).astype(config.floatX)
-    y[:, :, 0] = 1
-    return y
-
-def prep_e_batch(max_nblanks, actual_size, num_negs, batch_es):
-    e = numpy.zeros((max_nblanks, actual_size, num_negs + 1, 300), dtype = 'float32')
-    masks = numpy.zeros((max_nblanks, actual_size, dtype = 'float32'))
+def prep_train_e_batch(max_nblanks, actual_size, num_exps, batch_es):
+    e = numpy.zeros((max_nblanks, actual_size, num_exps, 300), dtype = 'float32')
+    masks = numpy.zeros((max_nblanks, actual_size), dtype = 'float32')
 
     for j, ei in enumerate(batch_es):
         e[:len(ei), j] = ei
         masks[:len(ei), j] = 1
 
     return e, masks
+
+def prep_test_e_batch(max_nblanks, actual_size, max_set_size, batch_es):
+    e = numpy.zeros((max_nblanks, actual_size, max_set_size, 300), dtype = 'float32')
+    masks = numpy.zeros((max_nblanks, actual_size), dtype = 'float32')
+
+    for j, ei in enumerate(batch_es):
+        for m in range(0, len(ei)):
+            set_size = len(ei[m])
+            for n in range(set_size, max_set_size):
+                ei[m].append(numpy.zeros(300, dtype = 'float32'))
+
+        e[:len(ei), j] = ei
+        masks[:len(ei), j] = 1
+
+    return e, masks
+
+def prep_test_masks(max_set_size, actual_size, batch_es):
+    test_masks = numpy.zeros((max_set_size, actual_size), dtype = 'float32')
+
+    for j, ei in enumerate(batch_es):
+        test_masks[:len(ei), j] = 1
+
+    return test_masks
+
+def prep_y_batch(e):
+    y = numpy.zeros(e.shape[:3]).astype(config.floatX)
+    y[:, :, 0] = 1
+
+    return y
 
 def launch_exp(settings):
     exp_dir = settings['datapath'] + 'result/{0}/'.format(uuid.uuid1())
@@ -101,6 +125,7 @@ def launch_exp(settings):
     lr = float32(settings['lr_rate'])
 
     embeddings = load_embeddings(settings['datapath'], settings['vocab_size'], settings['embedding_dim'], settings['random_init'])
+
     if settings['optimization_method'] == 'sgd':
         optimization_method = sgd(lr)
     elif settings['optimization_method'] == 'adam':
@@ -133,7 +158,8 @@ def launch_exp(settings):
 
             # the blank embeddings and masks #
             batch_es, nblanks, max_nblanks = get_e_batch(train_lexs, batch, batch_size)
-            e, masks = prep_e_batch(max_nblanks, actual_size, settings['num_negatives'], batch_es)
+
+            e, masks = prep_train_e_batch(max_nblanks, actual_size, settings['num_negatives'] + 1, batch_es)
 
             # the Xs into an array, and blank indexes #
             max_len = max(len(i) for i in batch_xs)
@@ -171,14 +197,17 @@ def launch_exp(settings):
 
                 # the blank embeddings and masks #
                 batch_es, nblanks, max_nblanks = get_e_batch(valid_lexs, batch, batch_size)
-                e, masks = prep_e_batch(max_nblanks, actual_size, batch_es)
+
+                max_set_size = max(len(i) for i in batch_es)
+                test_masks = prep_test_masks(max_set_size, actual_size, batch_es)
+                e, masks = prep_test_e_batch(max_nblanks, actual_size, max_set_size, batch_es)
 
                 # the Xs into an array, and blank indexes #
                 max_len = max(len(i) for i in batch_xs)
                 x, bid = prep_x_batch(max_len, max_nblanks, actual_size, batch_xs)
 
                 # test on mini-batch #
-                err = model.test(x, e, bid, masks)[0]
+                err = model.test(x, e, bid, masks, test_masks)[0]
 
                 # error on validation set #
                 valid_error += err
@@ -205,7 +234,7 @@ if __name__ == '__main__':
         'datapath': sys.argv[1],                    # path to dataset
         'lex_version': 'flex',                      # lexical embedding version
         'valid_freq': 1,                            # frequency to test on validation set
-        'vocab_size': 60000 + 2,                    # vocabulary size
+        'vocab_size': 30000 + 2,                    # vocabulary size
         'random_init': False,                       # random initialization of word embeddings
         'num_epochs': 20,                           # number of training epochs
         'batch_size': 128,                          # size of mini-batch
@@ -221,7 +250,6 @@ if __name__ == '__main__':
         'adam_epsilon': 1e-4,                       # 3rd adam hyperparameter
         'num_negatives': 5                          # number of negative examples
     }
-
     #####################
     # launch experiment #
     #####################

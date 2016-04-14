@@ -113,11 +113,12 @@ class HiddenLayer:
 
 class Predictor:
     def __init__(self, embeddings, embedding_dim = 300, lstm_dim = 128, use_gate = False, gate_activation = None, crs_term = False, optimization_method = None):
-        x = T.imatrix('input')              # : (seq_len, minibatch_size)
-        y = T.tensor3('targets')            # : (nblanks, minibatch_size, 2)
-        e = T.tensor4('embds')              # : (nblanks, minibatch_size, 2, embedding_dim)
-        blankidxs = T.imatrix('indexes')    # : (nblanks, minibatch_size)
-        masks = T.matrix('masks')           # : (maxnblanks, minibatch_size)
+        x = T.imatrix('input')                  # : (seq_len, minibatch_size)
+        y = T.tensor3('targets')                # : (nblanks, minibatch_size, num_negs)
+        e = T.tensor4('embds')                  # : (nblanks, minibatch_size, num_negs, embedding_dim)
+        blankidxs = T.imatrix('indexes')        # : (nblanks, minibatch_size)
+        masks = T.matrix('masks')               # : (maxnblanks, minibatch_size)
+        test_masks = T.matrix('test_masks')     # : (max_outlens, minibatch_size)
 
         x_embds = embeddings[x.flatten()].reshape((x.shape[0], x.shape[1], embedding_dim))
         self.in2lstm = HiddenLayer(embedding_dim, lstm_dim, None)
@@ -125,11 +126,9 @@ class Predictor:
 
         self.lstm2pred = HiddenLayer(lstm_dim, 1, None)
         self.e2pred = HiddenLayer(embedding_dim, 1, None)
-
         if use_gate:
             self.lstm2gate = HiddenLayer(lstm_dim, embedding_dim, None)
             self.e2gate = HiddenLayer(embedding_dim, embedding_dim, None)
-
         if crs_term:
             self.crs_W = theano.shared(numpy.random.uniform(-.1, .1, (embedding_dim, lstm_dim)).astype(config.floatX), 'crs_W')
             self.crs_b = theano.shared(numpy.float32(0.), 'crs_b')
@@ -160,8 +159,9 @@ class Predictor:
         else:
             pred = T.nnet.sigmoid(h_pred.dimshuffle(0, 1, 'x', 2) + e_pred).flatten(3)
 
-        error = T.argmax(pred * masks.dimshuffle(0, 1, 'x'), axis = 2).sum()
-        cost = T.mean(T.sum(T.nnet.binary_crossentropy(pred, y) * masks.dimshuffle(0, 1, 'x'), axis = [0, 2]) / masks.sum(axis = 0))
+        train_cost = T.mean(T.sum(T.nnet.binary_crossentropy(pred, y) * masks.dimshuffle(0, 1, 'x'), axis = [0, 2]) / masks.sum(axis = 0))
+        train_error = (T.neq(0, T.argmax(pred * masks.dimshuffle(0, 1, 'x'), axis = 2))).sum()
+        test_error = (T.neq(0, T.argmax(pred * masks.dimshuffle(0, 1, 'x') * test_masks.dimshuffle('x', 1, 0), axis = 2))).sum()
 
         params = [embeddings] + self.in2lstm.params + self.lstm.params + self.lstm2pred.params + self.e2pred.params
         if use_gate:
@@ -170,11 +170,11 @@ class Predictor:
             params += [self.crs_W, self.crs_b]
 
         self.params = params
-        grads = T.grad(cost, params)
+        grads = T.grad(train_cost, params)
         updates = optimization_method(params, grads)
 
-        self.learn = theano.function([x, y, e, blankidxs, masks], [cost, error], updates = updates, profile = _doProfile)
-        self.test = theano.function([x, e, blankidxs, masks], [error])
+        self.learn = theano.function([x, y, e, blankidxs, masks], [train_cost, train_error], updates = updates, profile = _doProfile)
+        self.test = theano.function([x, e, blankidxs, masks, test_masks], [test_error])
 
     def save_params(self, path):
         cPickle.dump([i.get_value() for i in self.params], open(path, 'w'), -1)
