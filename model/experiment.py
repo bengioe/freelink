@@ -230,11 +230,14 @@ def launch_exp(settings):
     print '\t - best validation error: {0}'.format(best_valid_err)
 
 if __name__ == '__main__':
+    word2idx = json.load(open(sys.argv[1] + 'word2idx.json', 'r'))
+    voc_size = len(word2idx)
+
     settings = {
         'datapath': sys.argv[1],                    # path to dataset
         'lex_version': 'flex',                      # lexical embedding version
         'valid_freq': 1,                            # frequency to test on validation set
-        'vocab_size': 30000 + 2,                    # vocabulary size
+        'vocab_size': voc_size + 2,                 # vocabulary size
         'random_init': False,                       # random initialization of word embeddings
         'num_epochs': 20,                           # number of training epochs
         'batch_size': 128,                          # size of mini-batch
@@ -250,6 +253,7 @@ if __name__ == '__main__':
         'adam_epsilon': 1e-4,                       # 3rd adam hyperparameter
         'num_negatives': 5                          # number of negative examples
     }
+
     #####################
     # launch experiment #
     #####################

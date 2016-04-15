@@ -23,6 +23,7 @@ def sgd(lr):
     def func(params, grads):
         updates = [(i, i - lr * gi) for i, gi in zip(params, grads)]
         return updates
+
     return func
 
 class Adam:
@@ -118,7 +119,7 @@ class Predictor:
         e = T.tensor4('embds')                  # : (nblanks, minibatch_size, num_negs, embedding_dim)
         blankidxs = T.imatrix('indexes')        # : (nblanks, minibatch_size)
         masks = T.matrix('masks')               # : (maxnblanks, minibatch_size)
-        test_masks = T.matrix('test_masks')     # : (max_outlens, minibatch_size)
+        test_masks = T.matrix('test_masks')     # : (max_set_size, minibatch_size)
 
         x_embds = embeddings[x.flatten()].reshape((x.shape[0], x.shape[1], embedding_dim))
         self.in2lstm = HiddenLayer(embedding_dim, lstm_dim, None)
@@ -126,9 +127,11 @@ class Predictor:
 
         self.lstm2pred = HiddenLayer(lstm_dim, 1, None)
         self.e2pred = HiddenLayer(embedding_dim, 1, None)
+
         if use_gate:
             self.lstm2gate = HiddenLayer(lstm_dim, embedding_dim, None)
             self.e2gate = HiddenLayer(embedding_dim, embedding_dim, None)
+
         if crs_term:
             self.crs_W = theano.shared(numpy.random.uniform(-.1, .1, (embedding_dim, lstm_dim)).astype(config.floatX), 'crs_W')
             self.crs_b = theano.shared(numpy.float32(0.), 'crs_b')
@@ -145,8 +148,8 @@ class Predictor:
 
         if use_gate:
             act = {'sigmoid': T.nnet.sigmoid, 'relu': lambda x : T.maximum(0, x), None: lambda x : x}[gate_activation]
-            gate_mask = act(self.lstm2gate.apply(indexed_hs).dimshuffle(0, 1, 'x', 2) + self.e2gate.apply(e))
-            classifier_es = gate_mask * e
+            filter_ = act(self.lstm2gate.apply(indexed_hs).dimshuffle(0, 1, 'x', 2) + self.e2gate.apply(e))
+            classifier_es = filter_ * e
         else:
             classifier_es = e
 
@@ -164,8 +167,10 @@ class Predictor:
         test_error = (T.neq(0, T.argmax(pred * masks.dimshuffle(0, 1, 'x') * test_masks.dimshuffle('x', 1, 0), axis = 2))).sum()
 
         params = [embeddings] + self.in2lstm.params + self.lstm.params + self.lstm2pred.params + self.e2pred.params
+
         if use_gate:
             params += self.lstm2gate.params + self.e2gate.params
+
         if crs_term:
             params += [self.crs_W, self.crs_b]
 
