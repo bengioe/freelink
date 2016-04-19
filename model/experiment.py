@@ -160,7 +160,7 @@ def launch_exp(settings):
             max_len = max(len(i) for i in batch_xs)
             x, bid = prep_x_batch(max_len, max_nblanks, actual_size, voc_size, batch_xs)
 
-            e, masks = prep_train_e_batch(max_nblanks, actual_size, settings['num_negatives'], batches)
+            e, masks = prep_train_e_batch(max_nblanks, actual_size, settings['num_negatives'], batch_es)
 
             y = prep_y_batch(e)
 
