@@ -115,8 +115,8 @@ class HiddenLayer:
 class Predictor:
     def __init__(self, embeddings, embedding_dim = 300, lstm_dim = 128, use_gate = False, gate_activation = None, crs_term = False, optimization_method = None):
         x = T.imatrix('input')                  # : (seq_len, minibatch_size)
-        y = T.tensor3('targets')                # : (nblanks, minibatch_size, num_negs)
-        e = T.tensor4('embds')                  # : (nblanks, minibatch_size, num_negs, embedding_dim)
+        y = T.tensor3('targets')                # : (nblanks, minibatch_size, num_exps)
+        e = T.tensor4('embds')                  # : (nblanks, minibatch_size, num_exps, embedding_dim)
         blankidxs = T.imatrix('indexes')        # : (nblanks, minibatch_size)
         masks = T.matrix('masks')               # : (maxnblanks, minibatch_size)
         test_masks = T.matrix('test_masks')     # : (max_set_size, minibatch_size)
