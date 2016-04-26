@@ -21,6 +21,7 @@ def fetch_mid(guid, path):
     name = '{0}.json'.format(guid)
     try:
         urllib.urlretrieve(url, path + name)
+
         # re-dump to format json payload #
         data = json.load(open(path + name, 'r'))
         json.dump(data, open(path + name, 'w'), indent = 4)
@@ -52,6 +53,7 @@ def fetch_lex(guid, params, path):
     name = '{0}.json'.format(guid)
     try:
         urllib.urlretrieve(url, path + name)
+        
         # re-dump to format json payload #
         data = json.load(open(path + name, 'r'))
         json.dump(data, open(path + name, 'w'), indent = 4)

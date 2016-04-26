@@ -1,6 +1,7 @@
 # Project FreeLink
 
 ## Processing Stage
+
 ### /process/wikilink.py:
 * Extraction phase complete
 * Filtering phase complete
@@ -20,8 +21,13 @@
 * Complete train / valid / test set split
 
 ## Experiment Stage
+
 ### /model/model.py
 * Build model classes
 
 ### /model/experiment.py
 * Finish launch script
+
+### /model/baseline.py
+* Implement most frequent baseline
+* Implement cosine similarity baseline
